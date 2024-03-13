@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+<meta http-equiv="refresh" content="30">
+
+{% block header %}
+<h1>{% block title %}Ground Control{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    <h2>Enter Command</h2>
+    <input type="text" name="command" id="command" placeholder="Type Command Here...">
+    <input type="submit" value="Transmit">
+    <h2>Quick Actions</h2>
+    <table>
+        <tbody>
+            <tr>
+                <td><button type="submit" name="clicked_button" value="NOP">No operation</button></td>
+                <td><button type="submit" name="clicked_button" value="STP">Send test packet</button></td>
+            </tr>
+            <tr>
+                <td><button type="submit" name="clicked_button" value="SRC">Set clock to GMT</button></td>
+                <td><button type="submit" name="clicked_button" value="GRC">Get clock time</button></td>
+            </tr>
+            <tr>
+                <td><button type="submit" name="clicked_button" value="PYC">Payload communications</button></td>
+                <td><button type="submit" name="clicked_button" value="SPT1">Take photo in one minute</button></td>
+            </tr>
+            <tr>
+                <td><button type="submit" name="clicked_button" value="SBI1">Set beacon interval to one minute</button>
+                <td><button type="submit" name="clicked_button" value="SBI3">Set beacon interval to three
+                        minutes</button></td>
+            </tr>
+            <tr>
+                <td><button type="submit" name="clicked_button" value="GTY">Get telemetry</button></td>
+                <td><button type="submit" name="clicked_button" value="GPW">Get power</button></td>
+            </tr>
+            <tr>
+                <td><button type="submit" name="clicked_button" value="CallSign">Transmit call sign</button></td>
+                <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>Received from Satellite</h2>
+    {% for transmission in transmissions %}
+    <p>{{transmission}}</p>
+    {% endfor %}
+</form>
+{% endblock %}

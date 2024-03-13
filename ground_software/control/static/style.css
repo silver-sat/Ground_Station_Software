@@ -1,0 +1,161 @@
+:root {
+    --bg: black;
+    --color: white;
+    --sub: #292929;
+    --btnbg: #2f739d;
+}
+
+html {
+    font-family: sans-serif;
+    background: var(--bg);
+    padding: 1rem;
+}
+
+body {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--bg);
+    color: var(--color);
+}
+
+h1 {
+    font-family: Garamond, serif;
+    color: var(--btnbg);
+    margin: 1rem 0;
+    font-size: 50px;
+}
+
+h2 {
+    font-weight: 200;
+}
+
+a {
+    color: var(--btnbg);
+}
+
+nav {
+    background: transparent;
+    padding: 20px;
+}
+
+    nav img {
+        display: block;
+        margin: auto auto;
+    }
+
+.content, p {
+    padding: 2rem;
+    background: var(--sub);
+    border-radius: 15px;
+}
+
+    .content > header {
+        border-bottom: 3px solid var(--btnbg);
+    }
+
+        .content > header h1 {
+            flex: auto;
+            margin: 1rem 0 0.25rem 0;
+        }
+
+.flash {
+    margin: 1em 0;
+    padding: 1em;
+    background: var(--bg);
+    color: var(--color);
+    border-radius: 15px;
+}
+
+.post > header {
+    display: flex;
+    align-items: flex-end;
+    font-size: 0.85em;
+}
+
+    .post > header > div:first-of-type {
+        flex: auto;
+    }
+
+    .post > header h1 {
+        font-size: 1.5em;
+        margin-bottom: 0;
+    }
+
+.post .about {
+    color: slategray;
+    font-style: italic;
+}
+
+.post .body {
+    white-space: pre-line;
+}
+
+.content:last-child {
+    margin-bottom: 0;
+}
+
+.content form {
+    margin: 1em 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.content label {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.content input, .content textarea {
+    margin-bottom: 1em;
+}
+
+.content textarea {
+    min-height: 12em;
+    resize: vertical;
+}
+
+input.danger {
+    color: #cc2f2e;
+}
+
+input[type=text] {
+    width: calc(100% - 40px);
+    height: 40px;
+    padding: 0px 15px;
+    outline: none;
+    border: 3px solid transparent;
+    border-radius: 40px;
+    background: var(--bg);
+    color: var(--color);
+}
+
+    input[type=text]:focus {
+        border: 3px solid var(--btnbg);
+    }
+
+input[type=submit] {
+    padding: 0px 15px;
+    background: var(--color);
+    color: var(--bg);
+    height: 40px;
+    line-height: 40px;
+    border-radius: 40px;
+    border: none;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+button {
+    padding: 0px 20px;
+    background: var(--btnbg);
+    height: 40px;
+    line-height: 40px;
+    border-radius: 40px;
+    border: none;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+    input[type=submit]:hover, button:hover {
+        opacity: 0.6;
+    }

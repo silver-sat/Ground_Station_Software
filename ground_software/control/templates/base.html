@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en-US">
+
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
+    <title>{% block title %}{% endblock %} - SilverSat Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <nav>
+        <img src="{{url_for('static', filename='cropped-silversat-logo-2.png')}}"/>
+    </nav>
+    <section class="content">
+        <header>
+            {% block header %}{% endblock %}
+        </header>
+        {% for message in get_flashed_messages() %}
+        <div class="flash">{{ message }}</div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </section>
+</html>
