@@ -2,6 +2,7 @@
 """
  @file gpredict_radio_interface.py
  @author Lee A. Congdon (lee@silversat.org)
+ @author Ben Cohen (ben@silversat.org)
  @brief SilverSat Ground Station Connection to gpredict
  @version 1.0.0
  @date 2023-12-15
