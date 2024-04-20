@@ -18,27 +18,38 @@ gpredict_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 gpredict_server.bind((gpredict_address, gpredict_port))
 gpredict_server.listen(0)
 
-url = "http://127.0.0.1:5000/radio"
-
+uplink_url = "http://127.0.0.1:5000/radio/uplink"
+downlink_url = "http://127.0.0.1:5000/radio/downlink"
 while True:
     print(f'gpredict_interface waiting for connection on ', {gpredict_address}, ':', {gpredict_port})
     socket, address = gpredict_server.accept()
     print(f'Connected: {address[0], address[1]}')
 
-    current_frequency = 0
+    uplink_frequency = 0
+    downlink_frequency = 0
     while True:
         data = socket.recv(1024)
         if not data:
             break
+        # todo: check format of gpredict data
+        gpredict_frequency = data[1:].strip()
         if data.startswith(b'F'):
-            frequency = data[1:].strip()
-            if current_frequency != frequency:
-                print(f'New frequency: {int(frequency)}')
-                payload = {'frequency':frequency}
-                response = requests.post(url, payload)
-                current_frequency = frequency
+            if gpredict_frequency != uplink_frequency:
+                print(f'New uplink frequency: {int(gpredict_frequency)}')
+                payload = {'frequency':gpredict_frequency}
+                response = requests.post(uplink_url, payload)
+                uplink_frequency = gpredict_frequency 
             socket.sendall(b'RPRT 0\n')
         elif data.startswith(b'f'):
-            socket.sendall(bytes(f'f: {int(current_frequency)}\n'.encode("utf-8")))
+            socket.sendall(bytes(f'f: {int(uplink_frequency)}\n'.encode("utf-8")))      
+        elif data.startswith(b'I'):
+            if gpredict_frequency != downlink_frequency:
+                print(f'New downlink frequency: {int(gpredict_frequency)}')
+                payload = {'frequency':gpredict_frequency}
+                response = requests.post(downlink_url, payload)
+                downlink_frequency = gpredict_frequency
+            socket.sendall(b'RPRT 0\n')
+        elif data.startswith(b'i'):
+            socket.sendall(bytes(f'i: {int(downlink_frequency)}\n'.encode("utf-8")))            
     socket.close()
     print(f'Disconnected from: {address[0], address[1]}')

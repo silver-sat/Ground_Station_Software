@@ -18,6 +18,8 @@ import threading
 
 FEND = b"\xC0"  # frame end
 REMOTE_FRAME = b"\xAA"
+DOPPLER_UPLINK = b"\xOD"
+DOPPLER_DOWNLINK = b"\xOE"
 
 # Serial link and lock
 
@@ -140,11 +142,20 @@ def create_app(test_config=None):
     # Radio doppler interface
 
 
-    @app.post("/radio")
+    @app.post("/radio/uplink")
     def adjust_frequency():
         frequency = request.form.get("frequency")
         serial_link.acquire()
-        issue(f"ModifyFrequency {frequency}")
+        command_link.write(FEND + DOPPLER_UPLINK + frequency.encode('utf-8') + FEND)
+        get_responses()
+        serial_link.release()
+        return {}
+    
+    @app.post("/radio/downlink")
+    def adjust_frequency():
+        frequency = request.form.get("frequency")
+        serial_link.acquire()
+        command_link.write(FEND + DOPPLER_DOWNLINK + frequency.encode('utf-8') + FEND)
         get_responses()
         serial_link.release()
         return {}
