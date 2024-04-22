@@ -50,4 +50,4 @@ Open a new command window, navigate to the radio folder, and enter the command
 
 The program will listen on the default TCP/IP port used by gpredict for radio frequency information.
 
-Now launch gpredict, add a radio as explained in the User Manual, open the radio interface, select a satellite in Target and track it. Verify that the Flask application is running. Select your radio in Settings and engage it. Radio Doppler data for the selected satellite will be transmitted to the ground radio.
+Now launch gpredict and create a ground station for your site. Add a radio as explained in the User Manual, open the radio interface, select a satellite in Target and track it. Verify that the Flask or Waitress application is running. Select your radio in Settings and engage it. Radio Doppler data for the selected satellite will be transmitted to the ground radio.
