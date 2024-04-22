@@ -37,8 +37,8 @@ while True:
     while True:
         data = socket.recv(1024)
         print("Received", data)
-        if not data:
-            break
+        # if not data:
+        #     break
         command = data[0:1]
         frequency = data[1:].strip()
         match command:

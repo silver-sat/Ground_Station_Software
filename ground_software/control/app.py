@@ -18,12 +18,12 @@ import threading
 
 FEND = b"\xC0"  # frame end
 REMOTE_FRAME = b"\xAA"
-DOPPLER_UPLINK = b"\xOD"
-DOPPLER_DOWNLINK = b"\xOE"
+DOPPLER_FREQUENCIES = b"\x0D"
 
 # Serial link and lock
 
 #command_link = serial.Serial("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", 57600, timeout=0.5)
+command_link = serial.Serial("/dev/ttys014", 57600)
 serial_link = threading.Lock()
 
 # GMT time formatted for command
@@ -142,21 +142,13 @@ def create_app(test_config=None):
     # Radio doppler interface
 
 
-    @app.post("/radio/uplink")
-    def adjust_frequency():
-        frequency = request.form.get("frequency")
+    @app.post("/radio")
+    def adjust_frequencies():
+        frequencies = request.form.get("frequency")
         serial_link.acquire()
-        command_link.write(FEND + DOPPLER_UPLINK + frequency.encode('utf-8') + FEND)
+        command_link.write(FEND + DOPPLER_FREQUENCIES + frequencies.encode('utf-8') + FEND)
         get_responses()
         serial_link.release()
         return {}
     
-    @app.post("/radio/downlink")
-    def adjust_frequency():
-        frequency = request.form.get("frequency")
-        serial_link.acquire()
-        command_link.write(FEND + DOPPLER_DOWNLINK + frequency.encode('utf-8') + FEND)
-        get_responses()
-        serial_link.release()
-        return {}
     return app
