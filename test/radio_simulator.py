@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
- @file app.py
+ @file radio_simulator.py
  @author Lee A. Congdon (lee@silversat.org)
  @brief SilverSat Ground Radio Simulator
  @version 1.0.0
  @date 2024-04-22
  
- This program simulates ground station radio
+ This program simulates the ground station radio
  
 """
 
@@ -15,8 +15,6 @@ import serial
 ## KISS special characters
 
 FEND = b"\xC0"  # frame end
-REMOTE_FRAME = b"\xAA"
-TRANSMIT_FREQUENCY = b"\x0D"
 RECEIVE_FREQUENCY = b"\x0E"
 
 # Serial connection
