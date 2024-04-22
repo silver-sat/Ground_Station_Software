@@ -31,37 +31,48 @@ while True:
     socket, address = gpredict_server.accept()
     print(f"Connected: {address[0], address[1]}")
 
-    uplink_frequency = 0
-    downlink_frequency = 0
+    receive_frequency = b"0"
+    transmit_frequency = b"0"
+
     while True:
         data = socket.recv(1024)
-        print("worked",data)
-        socket.sendall(b"RPRT 0\n")
+        print("Received", data)
         if not data:
             break
-        # todo: check format of gpredict data
-        gpredict_frequency = data[1:].strip()
-        if data.startswith(b"F"):
-            if gpredict_frequency != uplink_frequency:
-                uplink_frequency = gpredict_frequency
-                print(f"New uplink frequency: {int(uplink_frequency)}")
-                payload = {"frequency": uplink_frequency + downlink_frequency}
-                response = requests.post(radio_url, payload)
+        command = data[0:1]
+        frequency = data[1:].strip()
+        match command:
 
-                socket.sendall(b"RPRT 0\n")
-        elif data.startswith(b"f"):
-            socket.sendall(bytes(f"f: {int(uplink_frequency)}\n".encode("utf-8")))
-        elif data.startswith(b"I"):
-            if gpredict_frequency != downlink_frequency:
-                downlink_frequency = gpredict_frequency
-                print(f"New downlink frequency: {int(downlink_frequency)}")
-                payload = {"frequency": uplink_frequency + downlink_frequency}
+            # set receive frequency
+            case b"F":
+                receive_frequency = frequency
+                print(f"Receive frequency: {frequency}")
+                payload = {"frequency": transmit_frequency + receive_frequency}
                 response = requests.post(radio_url, payload)
-    
-            socket.sendall(b"RPRT 0\n")
-        elif data.startswith(b"i"):
-            socket.sendall(bytes(f"i: {int(downlink_frequency)}\n".encode("utf-8")))
-        else:
-            print("recieved data", data)
+                socket.sendall(b"RPRT 0\n")
+
+            # get receive frequency
+            case b"f":
+                print(f"Response: {receive_frequency}")
+                socket.sendall(receive_frequency + b"\n")
+
+            # set transmit frequency
+            case b"I":
+                transmit_frequency = frequency
+                print(f"Transmit frequency: {frequency}")
+                payload = {"frequency": transmit_frequency + receive_frequency}
+                response = requests.post(radio_url, payload)
+                socket.sendall(b"RPRT 0\n")
+
+            # get transmit frequency
+            case b"i":
+                print(f"Response: {transmit_frequency}")
+                socket.sendall(transmit_frequency + b"\n")
+
+            # unknown command    
+            case _:
+                print("Unknown command")
+                socket.sendall(b"RPRT 0\n")
+        
     socket.close()
     print(f"Disconnected from: {address[0], address[1]}")
