@@ -12,7 +12,6 @@
 from flask import Flask, render_template, request
 import serial
 import datetime
-import threading
 
 ## KISS special characters
 
@@ -20,11 +19,10 @@ FEND = b"\xC0"  # frame end
 REMOTE_FRAME = b"\xAA"
 DOPPLER_FREQUENCIES = b"\x0D"
 
-# Serial link and lock
+# Serial link, set to radio device or test device
 
-#command_link = serial.Serial("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", 57600, timeout=0.5)
-command_link = serial.Serial("/dev/ttys014", 57600)
-serial_link = threading.Lock()
+# command_link = serial.Serial("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", 57600, timeout=0.5)
+command_link = serial.Serial("/dev/ttys012", 57600, timeout=0.25)
 
 # GMT time formatted for command
 
@@ -57,7 +55,7 @@ def issue(command):
 
 def get_responses():
     transmissions = []
-    """try:
+    try:
         transmission = (
             command_link.read_until(expected=FEND)
             + command_link.read_until(expected=FEND)
@@ -65,44 +63,34 @@ def get_responses():
     except:
         pass
     while transmission:
-        if transmission[0] == 0x07:
-            transmissions.append(
-                f"Beacon: {transmission[1:].decode('utf-8', errors='replace')}"
-            )
-        else:
-            transmissions.append(
-                f"{transmission[1:].decode('utf-8', errors='replace')}"
-            )
+        transmissions.append(f"{transmission[1:].decode('utf-8', errors='replace')}")
         try:
             transmission = (
                 command_link.read_until(expected=FEND)
                 + command_link.read_until(expected=FEND)
             )[1:-1]
         except:
-            pass"""
+            pass
     return transmissions
 
 
 # Application
 
+
 def create_app(test_config=None):
-    # create and configure the app
-    app = Flask(__name__, instance_relative_config=True)	
-#app = Flask(__name__)
+    app = Flask(__name__, instance_relative_config=True)
 
-# a simple page that says hello
-    @app.route('/hello')
+    # a simple page that says hello
+    @app.route("/hello")
     def hello():
-        return 'Hello, World!'
+        return "Hello, World!"
 
- 
-# User interface
-
+    # User interface
 
     @app.route("/", methods=["GET", "POST"])
     def index():
+        print("Entering index")
         button = request.form.get("clicked_button")
-        serial_link.acquire()
         if button == None:
             command = request.form.get("command")
             issue(command)
@@ -134,21 +122,20 @@ def create_app(test_config=None):
                     pass
                 case _:
                     pass
-            transmissions = get_responses()
-            serial_link.release()
-            return render_template("control.html", transmissions=transmissions)
-
+        transmissions = get_responses()
+        print("Exiting index")
+        return render_template("control.html", transmissions=transmissions)
 
     # Radio doppler interface
 
-
     @app.post("/radio")
     def adjust_frequencies():
-        frequencies = request.form.get("frequency")
-        serial_link.acquire()
-        command_link.write(FEND + DOPPLER_FREQUENCIES + frequencies.encode('utf-8') + FEND)
-        get_responses()
-        serial_link.release()
+        frequencies = request.form.get("frequencies")
+        print("Sending: " + frequencies)
+        command_link.write(
+            FEND + DOPPLER_FREQUENCIES + frequencies.encode("utf-8") + FEND
+        )
+        # get_responses()
         return {}
-    
+
     return app

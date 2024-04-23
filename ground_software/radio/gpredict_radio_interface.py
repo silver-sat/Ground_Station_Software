@@ -12,6 +12,7 @@
 """
 import socket
 import requests
+import datetime
 
 gpredict_address = "127.0.0.1"
 gpredict_port = 4532
@@ -19,7 +20,9 @@ gpredict_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 gpredict_server.bind((gpredict_address, gpredict_port))
 gpredict_server.listen(0)
 
-radio_url = "http://127.0.0.1:5000/radio"
+# Set to address of web server
+
+radio_url = "http://127.0.0.1:8000/radio"
 
 while True:
     print(
@@ -31,14 +34,14 @@ while True:
     socket, address = gpredict_server.accept()
     print(f"Connected: {address[0], address[1]}")
 
-    receive_frequency = b"0"
-    transmit_frequency = b"0"
+    receive_frequency = b"000000000"
+    transmit_frequency = b"000000000"
 
     while True:
         data = socket.recv(1024)
-        print("Received", data)
-        # if not data:
-        #     break
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print("Timestamp:", timestamp)
+        print("Received:", data)
         command = data[0:1]
         frequency = data[1:].strip()
         match command:
@@ -47,7 +50,7 @@ while True:
             case b"F":
                 receive_frequency = frequency
                 print(f"Receive frequency: {frequency}")
-                payload = {"frequency": transmit_frequency + receive_frequency}
+                payload = {"frequencies": transmit_frequency + receive_frequency}
                 response = requests.post(radio_url, payload)
                 socket.sendall(b"RPRT 0\n")
 
@@ -60,7 +63,7 @@ while True:
             case b"I":
                 transmit_frequency = frequency
                 print(f"Transmit frequency: {frequency}")
-                payload = {"frequency": transmit_frequency + receive_frequency}
+                payload = {"frequencies": transmit_frequency + receive_frequency}
                 response = requests.post(radio_url, payload)
                 socket.sendall(b"RPRT 0\n")
 

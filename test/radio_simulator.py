@@ -11,15 +11,18 @@
 """
 
 import serial
+import time
 
 ## KISS special characters
 
 FEND = b"\xC0"  # frame end
-RECEIVE_FREQUENCY = b"\x0E"
+REMOTE_FRAME = b"\xAA"
+RECEIVE_FREQUENCY = b"\x0D"
 
 # Serial connection
 
-command_link = serial.Serial("/dev/ttys016", 57600)
+command_link = serial.Serial("/dev/ttys014", 57600)
+timer = time.time()
 
 while True:
     try:
@@ -30,3 +33,11 @@ while True:
     except:
         pass
     print(f"Received: {transmission}")
+
+    # if time.time() - timer > 1:
+    #     print("Sending data")
+    #     try:
+    #         command_link.write(FEND + REMOTE_FRAME + "Data from satellite".encode("utf-8") + FEND)
+    #     except:
+    #         pass
+    #     timer = time.time()

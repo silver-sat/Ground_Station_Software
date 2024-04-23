@@ -1,10 +1,8 @@
 # Ground Control Software
 
-The ground control software presents a user interface for entering commands to the satellite and receiving responses. It also enables the use of gpredict radio Doppler data for the ground radio.
+The ground control software presents a user interface for entering commands to the satellite and receiving responses. It also enables the use of gpredict radio Doppler data to adjust the transmit and receive frequencies for the ground radio.
 
-The ground control software is a web application designed to run on a Flask development server in a single-threaded environment on a single laptop. It is not secured for network deployment and the serial link to the ground radio is not implemented for use in a multi-threaded environment.
-
-To enable remote access, the application has been modified to run on Waitress...
+The ground control software is a web application developed in Flask. The Flask development server is not secured for network deployment. However, it can be used to locally control the satellite. To enable remote access, the application has been tested on Waitress. The application does not authenticate users and should only be used via a VPN.
 
 ## Installing the User Interface
 
@@ -24,9 +22,9 @@ Now install Flask using this command
 
 ```pip install Flask```
 
-Or install Waitress with this command...
+and install Waitress with this command
 
-Python virtual environments are recommended for use with Flask or Waitress, and may be required by your operating system. If you understand the implications, you may be able to install Flask or Waitress at the system level using a package manager or other method.
+```pip install waitress```
 
 Install pyserial using this command
 
@@ -36,13 +34,11 @@ Now move to the control directory in the ground_software directory and enter the
 
 ```Flask run --debug```
 
-or the following command...
+for development and testing or the following command for production
 
+```waitress-serve --listen=127.0.0.1:5000 --call app:create_app``` 
 
-
-This starts the app.py or application in the folder. If you receive an error message, you may need to modify the serial port name in app.py to match the port name on your system.
-
-For Waitress...
+This starts the web application in the folder. If you receive an error message, you may need to modify the serial port name in app.py to match the port name on your system.
 
 Open a browser and navigate to the address displayed, typically http://127.0.0.1:5000/
 
