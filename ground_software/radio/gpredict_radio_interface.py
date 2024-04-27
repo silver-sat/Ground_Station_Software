@@ -2,7 +2,7 @@
 """
  @file gpredict_radio_interface.py
  @author Lee A. Congdon (lee@silversat.org)
- @author Ben Cohen (ben@silversat.org)
+ @author Benjamin S. Cohen (ben@silversat.org)
  @brief SilverSat Ground Station Connection to gpredict
  @version 1.0.0
  @date 2023-12-15
@@ -72,10 +72,10 @@ while True:
                 print(f"Response: {transmit_frequency}")
                 socket.sendall(transmit_frequency + b"\n")
 
-            # unknown command    
+            # unknown command
             case _:
                 print("Unknown command")
                 socket.sendall(b"RPRT 0\n")
-        
+
     socket.close()
     print(f"Disconnected from: {address[0], address[1]}")

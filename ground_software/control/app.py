@@ -1,8 +1,9 @@
 """
  @file app.py
  @author Lee A. Congdon (lee@silversat.org)
+ @author Benjamin S. Cohen (ben@silversat.org)
  @brief SilverSat User and radio Doppler interface
- @version 1.0.0
+ @version 1.0.1
  @date 2023-12-15
  
  This program provides the user interface and the interface to the ground station for radio Doppler data
@@ -18,11 +19,12 @@ import datetime
 FEND = b"\xC0"  # frame end
 REMOTE_FRAME = b"\xAA"
 DOPPLER_FREQUENCIES = b"\x0D"
+CALLSIGN = b"\x0E"
 
 # Serial link, set to radio device or test device
 
 # command_link = serial.Serial("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", 57600, timeout=0.5)
-command_link = serial.Serial("/dev/ttys012", 57600, timeout=0.25)
+command_link = serial.Serial("/dev/pts/3", 57600, timeout=0.25)
 
 # GMT time formatted for command
 
@@ -117,13 +119,14 @@ def create_app(test_config=None):
                 case "GPW":
                     issue("GetPower")
                 case "CallSign":
-                    command_link.write("Call Sign".encode("utf-8"))
+                    command_link.write(FEND + CALLSIGN + FEND)
                 case "Refresh":
                     pass
                 case _:
                     pass
-        transmissions = get_responses()
+        # transmissions = get_responses()
         print("Exiting index")
+        transmissions = []
         return render_template("control.html", transmissions=transmissions)
 
     # Radio doppler interface
