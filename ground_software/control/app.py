@@ -25,7 +25,6 @@ CALLSIGN = b"\x0E"
 
 # command_link = serial.Serial("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", 57600, timeout=0.5)
 command_link = serial.Serial("/dev/pts/3", 57600, timeout=0.25)
-
 # GMT time formatted for command
 
 
@@ -57,6 +56,7 @@ def issue(command):
 
 def get_responses():
     transmissions = []
+    global session_transmissions = [] #seems it returns transmissions but this might be easier ...idk
     try:
         transmission = (
             command_link.read_until(expected=FEND)
@@ -66,6 +66,7 @@ def get_responses():
         pass
     while transmission:
         transmissions.append(f"{transmission[1:].decode('utf-8', errors='replace')}")
+        session_transmissions.append(f"{transmission[1:].decode('utf-8', errors='replace')}") #hopefully this is right -dom
         try:
             transmission = (
                 command_link.read_until(expected=FEND)

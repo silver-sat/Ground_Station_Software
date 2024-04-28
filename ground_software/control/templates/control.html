@@ -42,8 +42,10 @@
         </tbody>
     </table>
     <h2>Received from Satellite</h2>
-    {% for transmission in transmissions %}
-    <p>{{transmission}}</p>
-    {% endfor %}
+    <div class="transmission">
+        {% for transmission in session_transmissions %}
+        <p>{{transmission}}</p>
+        {% endfor %}
+    </div>
 </form>
 {% endblock %}
