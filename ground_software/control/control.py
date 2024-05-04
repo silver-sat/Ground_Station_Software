@@ -113,10 +113,10 @@ def create_app(test_config=None):
                     pass
                 case _:
                     pass
-        # transmissions = get_responses()
+        database=get_database()
+        responses=database.execute("SELECT * FROM responses ORDER BY timestamp DESC LIMIT 100").fetchall()        
         print("Exiting index")
-        transmissions = []
-        return render_template("control.html", transmissions=transmissions)
+        return render_template("control.html", responses=responses)
 
 
     return app
