@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS transmissions;
+DROP TABLE IF EXISTS responses;
+CREATE TABLE transmissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+    command TEXT NOT NULL, 
+    status TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE TABLE responses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+    response TEXT NOT NULL
+);
