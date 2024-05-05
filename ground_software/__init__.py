@@ -2,6 +2,7 @@
  @file __init__.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
+ @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
  @version 1.0.1
  @date 2023-12-15
@@ -45,8 +46,5 @@ def create_app(test_config=None):
     from . import control
     application.register_blueprint(control.blueprint)
     application.add_url_rule("/", endpoint="index")
-
-    from . import response
-    application.register_blueprint(response.blueprint)
 
     return application

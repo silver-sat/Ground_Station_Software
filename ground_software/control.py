@@ -2,11 +2,12 @@
  @file control.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
+ @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
  @version 1.0.0
  @date 2024-04-30
  
- This program provides the user interface
+ This program provides the user interface for sending commands and receiving responses
  
 """
 
@@ -20,8 +21,6 @@ from flask import (
     session,
     url_for,
 )
-
-from flask import Flask, render_template, request
 import datetime
 from ground_software.database import get_database
 
@@ -39,7 +38,7 @@ CALLSIGN = b"\x0E"
 def insert(command):
     database = get_database()
     print(f"Command: {command}")
-    command = FEND + REMOTE_FRAME + command.encode("utf-8") + FEND
+    command = FEND + REMOTE_FRAME + command.encode() + FEND
     database.execute("INSERT INTO transmissions (command) VALUES (?)", (command,))
     database.commit()
 
@@ -108,8 +107,12 @@ def index():
             case _:
                 pass
     
+
+# Update responses
+
     database = get_database()
     responses = database.execute(
         "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 100"
     ).fetchall()
+    print(f"Responses: {responses}")
     return render_template("control.html", responses=responses)
