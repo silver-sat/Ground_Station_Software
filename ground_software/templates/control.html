@@ -42,10 +42,10 @@
         </tbody>
     </table>
     <h2>Received from Satellite</h2>
-    <div class="transmission">
-        {% for transmission in session_transmissions %}
-        <p>{{transmission}}</p>
-        {% endfor %}
-    </div>
+        <div class="responses">
+            {% for response in responses %}
+            <p>{{ response['timestamp'] + " - " + response['response'][2:-1].decode() }}</p>
+            {% endfor %}
+        </div>
 </form>
 {% endblock %}

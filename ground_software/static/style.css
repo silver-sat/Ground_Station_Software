@@ -159,10 +159,10 @@ button {
     input[type=submit]:hover, button:hover {
         opacity: 0.6;
     }
-.transmission {
+.responses {
     overflow-y:auto;
     height:600px;
 }
-.transmission p {
+.responses p {
     word-wrap: break-word;
 }
