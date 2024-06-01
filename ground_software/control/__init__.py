@@ -18,7 +18,7 @@ import threading
 
 FEND = b"\xC0"  # frame end
 REMOTE_FRAME = b"\xAA"
-DOPPLER = b"\xOD"
+DOPPLER = b"\x0D"
 
 
 # Serial link and lock
