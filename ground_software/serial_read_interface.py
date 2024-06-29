@@ -53,4 +53,4 @@ def serial_read():
 
 
 if __name__ == "__main__":
-    serial.read()
+    serial_read()
