@@ -21,7 +21,7 @@ BAUD_RATE = 57600
 FEND = b"\xC0"
 
 
-def serial_write():
+def serial_read():
 
     # naming serial connection
     serial_port = "/dev/ttys010"
@@ -53,4 +53,4 @@ def serial_write():
 
 
 if __name__ == "__main__":
-    serial.write()
+    serial.read()
