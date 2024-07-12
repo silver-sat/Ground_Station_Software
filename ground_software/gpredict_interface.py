@@ -43,7 +43,7 @@ def gpredict_read():
                 break
             command = data[:1]
             frequency = data[1:].strip()
-            print(f"command {command}")
+            print(f"command {command} frequency {frequency}")
             match command:
                 case b"F":
                     receive_frequency = frequency
