@@ -12,7 +12,7 @@
 """
 FEND = b"\xC0"
 DOPPLER_FREQUENCIES = b"\x0D"
-
+SPACE = b"\x20"
 
 def gpredict_read():
     import sqlite3
@@ -31,8 +31,8 @@ def gpredict_read():
         )
         socket, address = gpredict_server.accept()
         print(f"connected: {address[0],address[1]}")
-        receive_frequency = b"00000000"
-        transmit_frequency = b"00000000"
+        receive_frequency = b"000000000"
+        transmit_frequency = b"000000000"
         while True:
 
             try:
@@ -53,6 +53,7 @@ def gpredict_read():
                             FEND
                             + DOPPLER_FREQUENCIES
                             + transmit_frequency
+                            + SPACE 
                             + receive_frequency
                             + FEND,
                         ),
@@ -72,6 +73,7 @@ def gpredict_read():
                             FEND
                             + DOPPLER_FREQUENCIES
                             + transmit_frequency
+                            + SPACE
                             + receive_frequency
                             + FEND,
                         ),
