@@ -46,9 +46,9 @@ Launch gpredict, configure your location and add a radio. The radio should be Du
 
 ## Starting the Ground Station
 
-From the ground_software directory, execute
+From the Ground_Station_Software directory, execute
 
-```./ground_station.py```
+```./ground_software/ground_station.py```
 
 This will start the gpredict interface, the serial read task, the serial write task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
 

@@ -23,7 +23,7 @@ BAUD_RATE = 57600
 def serial_write():
 
     # open database
-    connection = sqlite3.connect("../instance/radio.db")
+    connection = sqlite3.connect("./instance/radio.db")
     cursor = connection.cursor()
 
     # naming serial connection

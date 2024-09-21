@@ -28,7 +28,7 @@ def serial_write_task():
 
 
 if __name__ == "__main__":
-    process = subprocess.Popen(["flask", "--app", "control", "run", "--debug"])
+    process = subprocess.Popen(["flask", "--app", "ground_software", "run", "--debug"])
     gpredict_thread = threading.Thread(target=gpredict_task)
     serial_read_thread =threading.Thread(target=serial_read_task) 
     serial_write_thread = threading.Thread(target=serial_write_task)

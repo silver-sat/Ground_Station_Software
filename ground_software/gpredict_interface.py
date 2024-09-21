@@ -23,7 +23,7 @@ def gpredict_read():
     gpredict_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     gpredict_server.bind((gpredict_address, gpredict_port))
     gpredict_server.listen(0)
-    connection = sqlite3.connect("../instance/radio.db")
+    connection = sqlite3.connect("./instance/radio.db")
     cursor = connection.cursor()
     while True:
         print(
