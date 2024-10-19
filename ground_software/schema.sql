@@ -4,7 +4,7 @@ CREATE TABLE transmissions(
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     command NOT NULL, 
-    status NOT NULL DEFAULT 'pending',
+    status NOT NULL DEFAULT 'pending'
 );
 CREATE TABLE responses(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
