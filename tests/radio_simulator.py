@@ -31,6 +31,7 @@ def reader():
                 command_link.read_until(expected=FEND)
                 + command_link.read_until(expected=FEND)
             )[1:-1]
+            print(f"Received data: {transmission}")
         except:
             pass
 
@@ -39,7 +40,7 @@ def writer():
     counter = 1
     while True:
         if time.time() - timer > 1:
-            # print("Sending data")
+            print("Sending data")
             try:
                 command_link.write(FEND + REMOTE_FRAME + f"Data from satellite {counter}".encode("utf-8") + FEND)
             except:
