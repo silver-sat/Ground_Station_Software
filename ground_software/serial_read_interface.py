@@ -45,7 +45,7 @@ def serial_read():
 
         except:
             break
-        cursor.execute("INSERT INTO responses VALUES (?)", (response,))
+        cursor.execute("INSERT INTO responses (response) VALUES (?)", (response,))
         connection.commit()
 
 

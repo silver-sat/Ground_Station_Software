@@ -18,5 +18,7 @@ Start the radio simulator:
 
 Start gpredict
 
+Start the venv
+
 Start the user interface
 
