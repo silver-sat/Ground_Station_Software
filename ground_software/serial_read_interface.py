@@ -21,7 +21,7 @@ FEND = b"\xC0"
 def serial_read():
 
     # naming serial connection
-    serial_port = "/dev/ttys010"
+    serial_port = "/dev/ground_radio"
 
     while True:
         try:

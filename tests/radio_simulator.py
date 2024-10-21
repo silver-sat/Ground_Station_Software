@@ -19,7 +19,9 @@ RECEIVE_FREQUENCY = b"\x0D"
 
 # Serial connection
 
-command_link = serial.Serial("/dev/ttys011", 19200)
+BAUD_RATE = 19200
+
+command_link = serial.Serial("/dev/ground_station", BAUD_RATE)
 print("Radio simulator started")
 
 def reader(): 
