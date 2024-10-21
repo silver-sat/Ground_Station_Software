@@ -32,7 +32,7 @@ Install pyserial using this command
 
 Now initialize the database with the following command
 
-```flask --app __init__ init-database```
+```flask --app ground_software init-database```
 
 Set the appropriate value for the radio serial port in the serial_read_interface and serial_write_interface modules.
 

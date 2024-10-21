@@ -24,7 +24,7 @@ def close_database(e=None):
     if database is not None:
         database.close()
 def init_database():
-    database=get_database
+    database=get_database()
     with current_app.open_resource("schema.sql") as schema:
         database.executescript(schema.read().decode("utf8"))
 @click.command("init-database")
