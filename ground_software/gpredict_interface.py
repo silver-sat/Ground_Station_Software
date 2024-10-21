@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 """
- @file gpredict_interface.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
  @brief provides GPredict interface for the ground station
- @version 1.0.0
- @date 2024-06-01
  
  This program provides the GPredict interface for the ground station
  

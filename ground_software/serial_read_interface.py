@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """
- @file serial_read_interface.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
  @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
- @version 1.0.0
- @date 2024-05-18
  
  This program provides the radio interface for recieving commands
  
@@ -17,7 +14,7 @@ import sqlite3
 import serial
 import time
 
-BAUD_RATE = 57600
+BAUD_RATE = 19200
 FEND = b"\xC0"
 
 

@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
- @file radio_simulator.py
  @author Lee A. Congdon (lee@silversat.org)
  @brief SilverSat Ground Radio Simulator
- @version 1.0.0
- @date 2024-04-22
  
  This program simulates the ground station radio
  
@@ -22,7 +19,7 @@ RECEIVE_FREQUENCY = b"\x0D"
 
 # Serial connection
 
-command_link = serial.Serial("/dev/ttys013", 57600)
+command_link = serial.Serial("/dev/ttys011", 19200)
 print("Radio simulator started")
 
 def reader(): 
