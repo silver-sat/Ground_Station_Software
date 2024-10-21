@@ -14,4 +14,9 @@ Open a new terminal. Navigate to the Ground_Station_Software directory.
 
 Start the radio simulator:
 
-```
+```./tests/radio_simulator.py```
+
+Start gpredict
+
+Start the user interface
+
