@@ -24,7 +24,7 @@ def serial_write():
     cursor = connection.cursor()
 
     # naming serial connection
-    serial_port = "/dev/ground_radio"
+    serial_port = "/tmp/ground_radio"
 
     while True:
         try:
