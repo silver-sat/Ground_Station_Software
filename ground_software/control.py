@@ -32,8 +32,11 @@ FEND = b"\xC0"  # frame end
 REMOTE_FRAME = b"\xAA"
 CALLSIGN = b"\x0E"
 
-# Insert command in database
+# Command count for sequence number
 
+command_count = 0
+
+# Insert command in database
 
 def insert(command):
     database = get_database()
