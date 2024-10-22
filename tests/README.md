@@ -10,25 +10,13 @@ Open a terminal. Enter the command to create the serial link:
 
 ```socat PTY,link=/tmp/ground_station,raw,echo=0 PTY,link=/tmp/ground_radio,raw,echo=0```
 
-Open a new terminal. Navigate to the Ground_Station_Software directory. Start the venv:
-
-```. .venv/bin/activate```
-
 Start the radio simulator:
 
 ```./tests/radio_simulator.py```
 
-Open a new terminal. Start gpredict:
+Open a new terminal. Start the ground station software:
 
-```gpredict```
-
-Open a new terminal. Natigate to the Ground_Station_Software directory. Start the venv:
-
-```. .venv/bin/activate```
-
-Start the user interface
-
-```./ground_software/ground_station.py```
+```./operate_satellite.py```
 
 Track and engage a satellite using the gpredict interface.
 
