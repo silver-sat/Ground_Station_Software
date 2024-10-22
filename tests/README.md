@@ -8,7 +8,7 @@ Install socat using the instructions for your operating system. socat is used to
 
 Open a terminal. Enter the command to create the serial link:
 
-```socat PTY,link=/tmp/ground_station,raw,echo=0 PTY,link=/tmp/radio,raw,echo=0```
+```socat PTY,link=/tmp/ground_station,rawer PTY,link=/tmp/radio,rawer```
 
 Start the radio simulator:
 
