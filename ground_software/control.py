@@ -80,7 +80,7 @@ def index():
     button = request.form.get("clicked_button")
     command = request.form.get("command")
     if button == None and command != None:
-        insert(command)
+        insert(sign(command))
     else:
         match button:
             case "NOP":
