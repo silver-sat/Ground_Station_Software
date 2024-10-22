@@ -20,6 +20,9 @@ from flask import (
 )
 import datetime
 from ground_software.database import get_database
+import secrets
+import hashlib
+import hmac
 
 blueprint = Blueprint("control", __name__)
 
@@ -78,25 +81,25 @@ def index():
     else:
         match button:
             case "NOP":
-                insert("NoOperate")
+                insert(sign("NoOperate"))
             case "STP":
-                insert("SendTestPacket")
+                insert(sign("SendTestPacket"))
             case "SRC":
-                insert(f"SetClock {now()}")
+                insert(sign(f"SetClock {now()}"))
             case "GRC":
-                insert("ReportT")
+                insert(sign("ReportT"))
             case "PYC":
-                insert("PayComms")
+                insert(sign("PayComms"))
             case "SPT1":
-                insert(f"PicTimes {now1m()}")
+                insert(sign(f"PicTimes {now1m()}"))
             case "SBI1":
-                insert("BeaconSp 60")
+                insert(sign("BeaconSp 60"))
             case "SBI3":
-                insert("BeaconSp 180")
+                insert(sign("BeaconSp 180"))
             case "GTY":
-                insert("GetTelemetry")
+                insert(sign("GetTelemetry"))
             case "GPW":
-                insert("GetPower")
+                insert(sign("GetPower"))
             case "CallSign":
                 callsign()
             case "Refresh":
@@ -113,3 +116,20 @@ def index():
     ).fetchall()
     print(f"Responses: {responses}")
     return render_template("control.html", responses=responses)
+
+# Generate signed command
+
+def sign(command):
+
+    secret = open("secret.txt", "rb").read()
+    salt = (secrets.token_bytes(8))
+    global command_count
+    command_count = command_count + 1
+    sequence = str(command_count).zfill(8).encode("utf-8")
+    command = command.encode("utf-8")
+    computed_hmac = hmac.new(secret, digestmod=hashlib.blake2s)
+    computed_hmac.update(salt)
+    computed_hmac.update(sequence)
+    computed_hmac.update(command)
+    signature = computed_hmac.hexdigest().encode("utf-8") + salt.hex().encode("utf-8") + sequence
+    return signature + command

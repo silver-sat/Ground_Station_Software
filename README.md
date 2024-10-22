@@ -50,6 +50,10 @@ The gpredict_interface.py module provides the functions of Hamlib rigctld daemon
 
 Launch gpredict, configure your location as the default and add a radio. The radio should be Duplex TRX with PTT status None. Update the satellite tracking information (the TLE data). Ensure you have data for SilverSat available in the gpredict application.
 
+## Verifying the Shared Secret
+
+Create a secret.txt file in the Ground_Station_Software directory that matches the arduino_secrets.h file used to compile the Avionics software. Ensure that this file is included in .gitignore to prevent it from being uploaded to github.
+
 ## Starting the Ground Station
 
 From the Ground_Station_Software directory, execute
