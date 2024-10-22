@@ -41,7 +41,7 @@ command_count = 0
 def insert(command):
     database = get_database()
     print(f"Command: {command}")
-    command = FEND + REMOTE_FRAME + command.encode() + FEND
+    command = FEND + REMOTE_FRAME + command + FEND
     database.execute("INSERT INTO transmissions (command) VALUES (?)", (command,))
     database.commit()
 
