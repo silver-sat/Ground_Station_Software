@@ -115,9 +115,12 @@ def index():
 
     database = get_database()
     responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 100"
+        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
     ).fetchall()
-    print(f"Responses: {responses}")
+    for row in responses:
+        for column in row:
+            print(f"{column} ", end="")
+        print()
     return render_template("control.html", responses=responses)
 
 # Generate signed command
