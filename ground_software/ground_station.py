@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
- @file ground_station.py
  @author Benjamin S. Cohen (ben@silversat.org)
  @brief task manager for ground station
- @version 1.0.0
- @date 2024-06-01
  
 task manager for ground station 
 """

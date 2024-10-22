@@ -1,11 +1,8 @@
 """
- @file control.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
  @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
- @version 1.0.0
- @date 2024-04-30
  
  This program provides the user interface for sending commands and receiving responses
  

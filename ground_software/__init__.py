@@ -1,11 +1,8 @@
 """
- @file __init__.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
  @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
- @version 1.0.1
- @date 2023-12-15
  
  This package provides the user interface for the ground station
  

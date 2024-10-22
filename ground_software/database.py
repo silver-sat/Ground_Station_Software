@@ -1,10 +1,7 @@
 """
- @file database.py
  @author Lee A. Congdon (lee@silversat.org)
  @author Benjamin S. Cohen (ben@silversat.org)
  @brief initializes the database
- @version 1.0.0
- @date 2024-06-01
  
  This program intializes the database
  
