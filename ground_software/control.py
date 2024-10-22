@@ -117,6 +117,7 @@ def index():
     responses = database.execute(
         "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
     ).fetchall()
+    print("Responses:")
     for row in responses:
         for column in row:
             print(f"{column} ", end="")
