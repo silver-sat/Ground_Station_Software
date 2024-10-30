@@ -131,8 +131,7 @@ def latest_responses():
     responses = database.execute(
         "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
     ).fetchall()
-    # return jsonify([{"timestamp": row["timestamp"], "response": row["response"]} for row in responses])
-    return jsonify([{"timestamp": row["timestamp"]} for row in responses])
+    return jsonify([{"timestamp": row["timestamp"], "response": row["response"].decode("utf-8")} for row in responses])
 
 # Generate signed command
 

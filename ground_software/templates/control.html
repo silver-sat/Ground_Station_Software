@@ -55,12 +55,12 @@
                 responsesDiv.innerHTML = '';
                 data.forEach(item => {
                     const p = document.createElement('p');
-                    p.textContent = item.timestamp + " - " + item.response.slice(2, -1);
+                    p.textContent = item.timestamp + " - " + item.response;
                     responsesDiv.appendChild(p);
                 });
             });
     }
 
-    setInterval(fetchLatestResponses, 1000); // Fetch latest responses every second
+    setInterval(fetchLatestResponses, 5000); // Fetch latest responses every second
 </script>
 {% endblock %}
