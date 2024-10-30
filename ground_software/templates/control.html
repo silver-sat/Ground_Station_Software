@@ -40,10 +40,31 @@
         </tbody>
     </table>
     <h2>Received from Satellite</h2>
-    <div class="responses">
-            {% for response in responses %}
-            <p>{{ response['timestamp'] + " - " + response['response'][2:-1].decode() }}</p>
-            {% endfor %}
-        </div>
+    <div class="responses" id="responses">
+        {% for response in responses %}
+        <p>{{ response['timestamp'] + " - " + response['response'].decode('utf-8', errors='replace') }}</p>
+        {% endfor %}
+    </div>
 </form>
+<script>
+    function fetchLatestResponses() {
+        fetch('/latest_responses')
+            .then(response => response.json())
+            .then(data => {
+                const responsesDiv = document.getElementById('responses');
+                responsesDiv.innerHTML = '';
+                const filteredData = data.filter(item => {
+                    const hexResponse = item.response.slice(2, -1);
+                    return !hexResponse.startsWith("ACK D") && !hexResponse.startsWith("RES D");
+                });
+                filteredData.forEach(item => {
+                    const p = document.createElement('p');
+                    p.textContent = item.timestamp + " - " + item.response;
+                    responsesDiv.appendChild(p);
+                });
+            });
+    }
+
+    setInterval(fetchLatestResponses, 1000); // Fetch latest responses every second
+</script>
 {% endblock %}

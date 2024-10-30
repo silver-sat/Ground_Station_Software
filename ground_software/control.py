@@ -23,6 +23,7 @@ from ground_software.database import get_database
 import secrets
 import hashlib
 import hmac
+from flask import jsonify
 
 blueprint = Blueprint("control", __name__)
 
@@ -123,6 +124,14 @@ def index():
             print(f"{column} ", end="")
         print()
     return render_template("control.html", responses=responses)
+
+@blueprint.route("/latest_responses")
+def latest_responses():
+    database = get_database()
+    responses = database.execute(
+        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
+    ).fetchall()
+    return jsonify([{"timestamp": row["timestamp"], "response": row["response"].decode("utf-8", errors="replace")} for row in responses])
 
 # Generate signed command
 
