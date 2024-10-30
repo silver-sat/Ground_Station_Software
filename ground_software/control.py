@@ -17,13 +17,13 @@ from flask import (
     request,
     session,
     url_for,
+    jsonify,
 )
 import datetime
 from ground_software.database import get_database
 import secrets
 import hashlib
 import hmac
-from flask import jsonify
 
 blueprint = Blueprint("control", __name__)
 
@@ -114,16 +114,16 @@ def index():
 
 # Update responses
 
-    database = get_database()
-    responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
-    ).fetchall()
-    print("Responses:")
-    for row in responses:
-        for column in row:
-            print(f"{column} ", end="")
-        print()
-    return render_template("control.html", responses=responses)
+    # database = get_database()
+    # responses = database.execute(
+    #     "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
+    # ).fetchall()
+    # print("Responses:")
+    # for row in responses:
+    #     for column in row:
+    #         print(f"{column} ", end="")
+    #     print()
+    # return render_template("control.html", responses=responses)
 
 @blueprint.route("/latest_responses")
 def latest_responses():

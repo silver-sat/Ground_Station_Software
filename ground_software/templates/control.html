@@ -54,8 +54,8 @@
                 const responsesDiv = document.getElementById('responses');
                 responsesDiv.innerHTML = '';
                 const filteredData = data.filter(item => {
-                    const hexResponse = item.response.slice(2, -1);
-                    return !hexResponse.startsWith("ACK D") && !hexResponse.startsWith("RES D");
+                    const trimResponse = item.response.slice(2, -1);
+                    return !trimResponse.startsWith("ACK D") && !trimResponse.startsWith("RES D");
                 });
                 filteredData.forEach(item => {
                     const p = document.createElement('p');
