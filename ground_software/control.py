@@ -123,7 +123,7 @@ def index():
     #     for column in row:
     #         print(f"{column} ", end="")
     #     print()
-    # return render_template("control.html", responses=responses)
+    return render_template("control.html", responses="")
 
 @blueprint.route("/latest_responses")
 def latest_responses():
