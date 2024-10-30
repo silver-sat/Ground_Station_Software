@@ -57,7 +57,7 @@
                     const hexResponse = item.response;
                     const hexSequence1 = "\xC0\x00\x41\x43\x4B\x20\x44";
                     const hexSequence2 = "\xC0\x00\x52\x45\x53\x20\x44";
-                    return !hexResponse.startsWith(hexSequence1) && !hexResponse.startsWith(hexSequence2);
+                    return !hexResponse.startsWith(hexSequence1)[2,-1] && !hexResponse.startsWith(hexSequence2)[2,-1];
                 });
                 filteredData.forEach(item => {
                     const p = document.createElement('p');
