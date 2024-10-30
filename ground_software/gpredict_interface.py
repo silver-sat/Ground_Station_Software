@@ -24,7 +24,7 @@ def gpredict_read():
     cursor = connection.cursor()
     while True:
         print(
-            f"Gpredict waiting for a connection on: {gpredict_address}:{gpredict_port}"
+            f"Gpredict interface waiting for a connection on: {gpredict_address}:{gpredict_port}"
         )
         socket, address = gpredict_server.accept()
         print(f"connected: {address[0],address[1]}")
