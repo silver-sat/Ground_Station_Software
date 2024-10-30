@@ -42,7 +42,7 @@
     <h2>Received from Satellite</h2>
     <div class="responses" id="responses">
         {% for response in responses %}
-        <p>{{ response['timestamp'] + " - " + response['response'].decode('utf-8', errors='replace') }}</p>
+        <p>{{ response['timestamp'] + " - " + response['response'].decode('utf-8', errors='replace').slice(2,-1) }}</p>
         {% endfor %}
     </div>
 </form>
