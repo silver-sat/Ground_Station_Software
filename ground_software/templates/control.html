@@ -53,7 +53,13 @@
             .then(data => {
                 const responsesDiv = document.getElementById('responses');
                 responsesDiv.innerHTML = '';
-                data.forEach(item => {
+                const filteredData = data.filter(item => {
+                    const hexResponse = item.response;
+                    const hexSequence1 = "\xC0\x00\x41\x43\x4B\x20\x44";
+                    const hexSequence2 = "\xC0\x00\x52\x45\x53\x20\x44";
+                    return !hexResponse.startsWith(hexSequence1) && !hexResponse.startsWith(hexSequence2);
+                });
+                filteredData.forEach(item => {
                     const p = document.createElement('p');
                     p.textContent = item.timestamp + " - " + item.response;
                     responsesDiv.appendChild(p);
@@ -61,6 +67,6 @@
             });
     }
 
-    setInterval(fetchLatestResponses, 5000); // Fetch latest responses every second
+    setInterval(fetchLatestResponses, 1000); // Fetch latest responses every second
 </script>
 {% endblock %}
