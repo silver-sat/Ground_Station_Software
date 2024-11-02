@@ -24,7 +24,7 @@ def serial_write():
     cursor = connection.cursor()
 
     # naming serial connection
-    serial_port = "/dev/ttyUSB0"
+    serial_port = "/dev/tty.usbserial-A50285BI"
 
     while True:
         try:

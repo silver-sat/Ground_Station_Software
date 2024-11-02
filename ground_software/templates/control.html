@@ -39,7 +39,7 @@
             </tr>
         </tbody>
     </table>
-    <h2>Received from Satellite</h2>
+    <h2>Command Responses</h2>
     <div class="responses" id="responses">
         {% for response in responses %}
         <p>{{ response['timestamp'] + " - " + response['response'].decode('utf-8', errors='replace') }}</p>
@@ -54,12 +54,12 @@
                 const responsesDiv = document.getElementById('responses');
                 responsesDiv.innerHTML = '';
                 const filteredData = data.filter(item => {
-                    const hexResponse = item.response.slice(2, -1);
-                    return !hexResponse.startsWith("ACK D") && !hexResponse.startsWith("RES D");
+                    const trimResponse = item.response.slice(2, -1);
+                    return !trimResponse.startsWith("ACK D") && !trimResponse.startsWith("RES D");
                 });
                 filteredData.forEach(item => {
                     const p = document.createElement('p');
-                    p.textContent = item.timestamp + " - " + item.response;
+                    p.textContent = item.timestamp + " - " + item.response.slice(2, -1);
                     responsesDiv.appendChild(p);
                 });
             });
