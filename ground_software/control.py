@@ -39,6 +39,7 @@ command_count = 0
 
 # Insert command in database
 
+
 def insert(command):
     database = get_database()
     print(f"Command: {command}")
@@ -110,35 +111,36 @@ def index():
                 pass
             case _:
                 pass
-    
 
-# Update responses
+    # Update responses
 
-    # database = get_database()
-    # responses = database.execute(
-    #     "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
-    # ).fetchall()
-    # print("Responses:")
-    # for row in responses:
-    #     for column in row:
-    #         print(f"{column} ", end="")
-    #     print()
     return render_template("control.html", responses="")
+
 
 @blueprint.route("/latest_responses")
 def latest_responses():
     database = get_database()
     responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
+        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 40"
     ).fetchall()
-    return jsonify([{"timestamp": row["timestamp"], "response": row["response"].decode("utf-8", errors="replace")} for row in responses])
+    return jsonify(
+        [
+            {
+                "timestamp": row["timestamp"],
+                "response": row["response"].decode("utf-8", errors="replace"),
+            }
+            for row in responses
+        ]
+    )
+
 
 # Generate signed command
+
 
 def sign(command):
 
     secret = open("secret.txt", "rb").read()
-    salt = (secrets.token_bytes(8))
+    salt = secrets.token_bytes(8)
     global command_count
     command_count = command_count + 1
     sequence = str(command_count).zfill(8).encode("utf-8")
@@ -147,5 +149,9 @@ def sign(command):
     computed_hmac.update(salt)
     computed_hmac.update(sequence)
     computed_hmac.update(command)
-    signature = computed_hmac.hexdigest().encode("utf-8") + salt.hex().encode("utf-8") + sequence
+    signature = (
+        computed_hmac.hexdigest().encode("utf-8")
+        + salt.hex().encode("utf-8")
+        + sequence
+    )
     return signature + command

@@ -165,4 +165,6 @@ button {
 }
 .responses p {
     word-wrap: break-word;
+    margin: 0;
+    padding: 2px 0;
 }
