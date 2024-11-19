@@ -1,6 +1,6 @@
 # Ground Control Software
 
-The ground control software presents a user interface for entering commands to the satellite and receiving responses. It also transmits gpredict radio Doppler data to adjust the receive and transmit frequencies for the ground radio.
+The ground control software presents a user interface for issuing commands to the satellite and receiving responses. It also forwards gpredict radio Doppler data to adjust the receive and transmit frequencies for the ground radio.
 
 The ground control software is a web application developed in Flask to send commands and display responses and Python modules to read from gpredict, write to the radio, and read from the radio. Commands and responses are queued and stored in a sqlite3 database.
 
@@ -8,7 +8,7 @@ The ground control software is a web application developed in Flask to send comm
 
 These instructions assume a Linux or MacOS environment. Different steps would be required for Windows environments.
 
-Clone the Ground_Station_Software repository from github to a local directory on the laptop. If the repository is already present, ensure it is up to date using git pull from the command line or an equivalent.
+Clone the Ground_Station_Software repository from github to a local directory on the laptop. If the repository is already present, ensure it is up to date using git pull from the command line or the equivalent.
 
 Open a command shell and navigate to the Ground_Station_Software directory. Create a python virtual environment with the following command:
 
@@ -38,13 +38,13 @@ Now initialize the database with the following command
 
 ```flask --app ground_software init-database```
 
-This will create the radio.db database in the instance folder to store commands and responses.
+This will create the radio.db database in the instance folder, which is used to store commands and responses.
 
-Set the appropriate value for the radio serial port in the serial_read_interface and serial_write_interface modules. You may find it convenient to use socat to connect a PTY to the actual port to avoid changing the code.
+Set the appropriate value for the radio serial port in the serial_read_interface and serial_write_interface modules.
 
 ## Installing the Radio Doppler Control
 
-Install the gpredict application on the laptop by following the instructions for your operating system.
+Install the gpredict application on the laptop by following the instructions for your operating system. Homebrew is recommended for MacOS and apt is recommended for Ubuntu.
 
 The gpredict_interface.py module provides the functions of Hamlib rigctld daemon. You do not need rigctld to control the SilverSat radio.
 
@@ -62,13 +62,13 @@ From the Ground_Station_Software directory, execute
 
 This will start the gpredict interface module, the serial read task, the serial write task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
 
-If you receive an error message, you may need to modify the serial port name in serial_read_interface.py and serial_write_interface.py to match the port name of the radio on your system. Again, socat may allow you to map the serial port to a defined PTY name.
+If you receive an error message, you may need to modify the serial port name in serial_read_interface.py and serial_write_interface.py to match the port name of the radio on your system.
 
 Open a browser and navigate to the address displayed in the Flask startup log, typically http://127.0.0.1:5000/. Ensure the SilverSat user interface is displayed. 
 
 You may now enter commands to the satellite by clicking a button or typing a command on the command line and pressing enter. Responses from the satellite will be displayed at the bottom of the window, most recent response first.
 
-Start gpredict and open Radio Control. Target SilverSat and Track it. Then select your radio device and Engage. Radio Doppler data for the selected satellite will be transmitted to the ground radio via the gpredict interface module. The frequencies will be visible in the command window.
+Start gpredict and open Radio Control. Target SilverSat and Track it. Then select your radio device and Engage. Radio Doppler data for the selected satellite will be transmitted to the ground radio via the gpredict interface module.
 
 ## Operating the satellite
 
