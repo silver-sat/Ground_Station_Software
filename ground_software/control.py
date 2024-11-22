@@ -35,7 +35,7 @@ CALLSIGN = b"\x0E"
 
 # Command count for sequence number
 
-command_count = 0
+command_sequence = 1
 
 # Insert command in database
 
@@ -79,49 +79,61 @@ def callsign():
 
 @blueprint.route("/", methods=["GET", "POST"])
 def index():
-    button = request.form.get("clicked_button")
-    command = request.form.get("command")
-    if button == None and command != None:
-        insert(sign(command))
-    else:
-        match button:
-            case "NOP":
-                insert(sign("NoOperate"))
-            case "STP":
-                insert(sign("SendTestPacket"))
-            case "SRC":
-                insert(sign(f"SetClock {now()}"))
-            case "GRC":
-                insert(sign("ReportT"))
-            case "PYC":
-                insert(sign("PayComms"))
-            case "SPT1":
-                insert(sign(f"PicTimes {now1m()}"))
-            case "SBI1":
-                insert(sign("BeaconSp 60"))
-            case "SBI3":
-                insert(sign("BeaconSp 180"))
-            case "GTY":
-                insert(sign("GetTelemetry"))
-            case "GPW":
-                insert(sign("GetPower"))
-            case "CallSign":
-                callsign()
-            case "Refresh":
-                pass
-            case _:
-                pass
+    global command_sequence
+    if request.method == "POST": 
+        try:
+            command_sequence = int(request.form.get("command_sequence"))
+        except ValueError:
+            flash("Invalid command sequence value")
+        command = request.form.get("command")
+        button = request.form.get("clicked_button")
+        if command:
+            insert(sign(command))
+        else:
+            match button:
+                case "NOP":
+                    insert(sign("NoOperate"))
+                case "STP":
+                    insert(sign("SendTestPacket"))
+                case "SRC":
+                    insert(sign(f"SetClock {now()}"))
+                case "GRC":
+                    insert(sign("ReportT"))
+                case "PYC":
+                    insert(sign("PayComms"))
+                case "SPT1":
+                    insert(sign(f"PicTimes {now1m()}"))
+                case "SBI1":
+                    insert(sign("BeaconSp 60"))
+                case "SBI3":
+                    insert(sign("BeaconSp 180"))
+                case "GTY":
+                    insert(sign("GetTelemetry"))
+                case "GPW":
+                    insert(sign("GetPower"))
+                case "CallSign":
+                    callsign()
+                case "Refresh":
+                    pass
+                case _:
+                    pass
 
     # Update responses
+    database = get_database()
+    responses = database.execute(
+        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
+    ).fetchall()
 
-    return render_template("control.html", responses="")
+    return render_template(
+        "control.html", responses=responses, command_sequence=command_sequence
+    )
 
 
 @blueprint.route("/latest_responses")
 def latest_responses():
     database = get_database()
     responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 40"
+        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
     ).fetchall()
     return jsonify(
         [
@@ -141,9 +153,9 @@ def sign(command):
 
     secret = open("secret.txt", "rb").read()
     salt = secrets.token_bytes(8)
-    global command_count
-    command_count = command_count + 1
-    sequence = str(command_count).zfill(8).encode("utf-8")
+    global command_sequence
+    sequence = str(command_sequence).zfill(8).encode("utf-8")
+    command_sequence = command_sequence + 1
     command = command.encode("utf-8")
     computed_hmac = hmac.new(secret, digestmod=hashlib.blake2s)
     computed_hmac.update(salt)

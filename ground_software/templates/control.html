@@ -38,14 +38,33 @@
                 <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
             </tr>
         </tbody>
-    </table>
+    </table>    
+    <h2>Command Sequence Number</h2>
+    <div class="command-count-container">
+        <input type="number" name="command_sequence" id="command_sequence" value="{{ command_sequence }}">
+        <input type="submit" value="Set Sequence Number">
+    </div>
     <h2>Command Responses</h2>
     <div class="responses" id="responses">
         {% for response in responses %}
-        <p>{{ response['timestamp'] + " - " + response['response'].decode('utf-8', errors='replace') }}</p>
+        <p>{{ response['timestamp'] + " - " + response['response'][2:-1].decode('utf-8', errors='replace') }}</p>
         {% endfor %}
     </div>
 </form>
+<style>
+    .responses p {
+        margin: 0;
+        padding: 2px 0; /* Adjust the padding as needed */
+    }
+    .command-count-container {
+        display: flex;
+        align-items: center;
+    }
+    .command-count-container input[type="number"] {
+        margin-right: 10px; /* Adjust the margin as needed */
+    }
+</style>
+
 <script>
     function fetchLatestResponses() {
         fetch('/latest_responses')
