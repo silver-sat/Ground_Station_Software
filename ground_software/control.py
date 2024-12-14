@@ -113,6 +113,8 @@ def index():
                     insert(sign("GetPower"))
                 case "CallSign":
                     callsign()
+                case "SDT1":
+                    insert(sign(f"SSDVTimes {now1m()}"))
                 case "Refresh":
                     pass
                 case _:
