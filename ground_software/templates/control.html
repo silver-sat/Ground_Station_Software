@@ -1,11 +1,37 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<h1>{% block title %}Ground Control{% endblock %}</h1>
+<h1>{% block title %}Ground Control{% endblock %}
+
+
+</h1>
 {% endblock %}
 
 {% block content %}
 <form method="POST">
+    <div id="clock"></div>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            let options = {
+
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+                second: "numeric",
+                timeZone: "Etc/UTC",
+                hour12: false,
+            };
+
+            var gmtDateTime = now.toLocaleString('en-US', options);
+
+            document.getElementById('clock').innerHTML = "GMT: " + gmtDateTime;
+        }
+
+        setInterval(updateClock, 1000); // Update every second
+    </script>
     <h2>Enter Command</h2>
     <input type="text" name="command" id="command" placeholder="Type Command Here...">
     <input type="submit" value="Transmit">
@@ -38,7 +64,7 @@
                 <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
             </tr>
         </tbody>
-    </table>    
+    </table>
     <h2>Command Sequence Number</h2>
     <div class="command-count-container">
         <input type="number" name="command_sequence" id="command_sequence" value="{{ command_sequence }}">
@@ -54,14 +80,18 @@
 <style>
     .responses p {
         margin: 0;
-        padding: 2px 0; /* Adjust the padding as needed */
+        padding: 2px 0;
+        /* Adjust the padding as needed */
     }
+
     .command-count-container {
         display: flex;
         align-items: center;
     }
+
     .command-count-container input[type="number"] {
-        margin-right: 10px; /* Adjust the margin as needed */
+        margin-right: 10px;
+        /* Adjust the margin as needed */
     }
 </style>
 
