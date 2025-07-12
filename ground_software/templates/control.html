@@ -37,7 +37,7 @@
             };
 
             var gmtDateTime = now.toLocaleString('en-US', options);
-            var estDateTime = now.toLocaleString('en-US',options2);
+            var estDateTime = now.toLocaleString('en-US', options2);
             document.getElementById('clock').innerHTML = "GMT: " + gmtDateTime + "<br> EST: " + estDateTime;
 
         }
@@ -47,50 +47,60 @@
     <h2>Enter Command</h2>
     <input type="text" name="command" id="command" placeholder="Type Command Here...">
     <input type="submit" value="Transmit">
-    <h2>Quick Actions</h2>
-    <table>
-        <tbody>
-            <tr>
-                <td><button type="submit" name="clicked_button" value="NOP">No operation</button></td>
-                <td><button type="submit" name="clicked_button" value="STP">Send test packet</button></td>
-            </tr>
-            <tr>
-                <td><button type="submit" name="clicked_button" value="SRC">Set clock to GMT</button></td>
-                <td><button type="submit" name="clicked_button" value="GRC">Get clock time</button></td>
-            </tr>
-            <tr>
-                <td><button type="submit" name="clicked_button" value="PYC">Payload communications</button></td>
-                <td><button type="submit" name="clicked_button" value="SPT1">Take photo in one minute</button></td>
-            </tr>
-            <tr>
-                <td><button type="submit" name="clicked_button" value="SBI1">Set beacon interval to one minute</button>
-                <td><button type="submit" name="clicked_button" value="SBI3">Set beacon interval to three
-                        minutes</button></td>
-            </tr>
-            <tr>
-                <td><button type="submit" name="clicked_button" value="GTY">Get telemetry</button></td>
-                <td><button type="submit" name="clicked_button" value="GPW">Get power</button></td>
-            </tr>
-            <tr>
-                <td><button type="submit" name="clicked_button" value="CallSign">Transmit call sign</button></td>
-                <td><button type="submit" name="clicked_button" value="SDT1">Start SSDV in one minute</button></td>
-            </tr>
-            <tr></tr>
-            <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
-            <td></td>
-            </tr>
-        </tbody>
-    </table>
-    <h2>Command Sequence Number</h2>
-    <div class="command-count-container">
-        <input type="number" name="command_sequence" id="command_sequence" value="{{ command_sequence }}">
-        <input type="submit" value="Set Sequence Number">
-    </div>
-    <h2>Command Responses</h2>
-    <div class="responses" id="responses">
-        {% for response in responses %}
-        <p>{{ response['timestamp'] + " - " + response['response'][2:-1].decode('utf-8', errors='replace') }}</p>
-        {% endfor %}
+    <div class="main-flex-container">
+        <div class="left-panel">
+            <h2>Quick Actions</h2>
+
+            <table>
+                <tbody>
+                    <tr>
+                        <td><button type="submit" name="clicked_button" value="NOP">No operation</button></td>
+                        <td><button type="submit" name="clicked_button" value="STP">Send test packet</button></td>
+                    </tr>
+                    <tr>
+                        <td><button type="submit" name="clicked_button" value="SRC">Set clock to GMT</button></td>
+                        <td><button type="submit" name="clicked_button" value="GRC">Get clock time</button></td>
+                    </tr>
+                    <tr>
+                        <td><button type="submit" name="clicked_button" value="PYC">Payload communications</button></td>
+                        <td><button type="submit" name="clicked_button" value="SPT1">Take photo in one minute</button></td>
+
+                    </tr>
+                    <tr>
+                        <td><button type="submit" name="clicked_button" value="SBI1">Beacon interval one minute</button></td>
+                        <td><button type="submit" name="clicked_button" value="SBI3">Beacon interval three minutes</button></td>
+                    </tr>
+                    <tr>
+                        <td><button type="submit" name="clicked_button" value="GTY">Get telemetry</button></td>
+                        <td><button type="submit" name="clicked_button" value="GPW">Get power</button></td>
+                    </tr>
+                    <tr>
+                        <td><button type="submit" name="clicked_button" value="CallSign">Transmit call sign</button>
+                        </td>
+                        <td><button type="submit" name="clicked_button" value="SDT1">Start SSDV in one minute</button>
+                        </td>
+                    </tr>
+                    <tr></tr>
+                    <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
+                    <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="right-panel">
+            <h2>Command Sequence Number</h2>
+            <div class="command-count-container">
+                <input type="number" name="command_sequence" id="command_sequence" value="{{ command_sequence }}">
+                <input type="submit" value="Set Sequence Number">
+            </div>
+            <h2>Command Responses</h2>
+            <div class="responses" id="responses">
+                {% for response in responses %}
+                <p>{{ response['timestamp'] + " - " + response['response'][2:-1].decode('utf-8', errors='replace') }}
+                </p>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </form>
 <style>
@@ -108,6 +118,24 @@
     .command-count-container input[type="number"] {
         margin-right: 10px;
         /* Adjust the margin as needed */
+
+    }
+
+    .main-flex-container {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+
+    }
+
+    .left-panel {
+        flex: 2;
+        
+    }
+
+    .right-panel {
+        flex: 2;
+        
     }
 </style>
 
