@@ -103,6 +103,8 @@ def index():
                     insert(sign("PayComms"))
                 case "SPT1":
                     insert(sign(f"PicTimes {now1m()}"))
+                case "SBI0":
+                    insert(sign("BeaconSp 0"))
                 case "SBI1":
                     insert(sign("BeaconSp 60"))
                 case "SBI3":

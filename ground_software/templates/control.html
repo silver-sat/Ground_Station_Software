@@ -37,8 +37,8 @@
             };
 
             var gmtDateTime = now.toLocaleString('en-US', options);
-            var estDateTime = now.toLocaleString('en-US', options2);
-            document.getElementById('clock').innerHTML = "GMT: " + gmtDateTime + "<br> EST: " + estDateTime;
+            var etDateTime = now.toLocaleString('en-US', options2);
+            document.getElementById('clock').innerHTML = "GMT: " + gmtDateTime + "<br> ET: " + etDateTime;
 
         }
         updateClock();
@@ -64,25 +64,22 @@
                     <tr>
                         <td><button type="submit" name="clicked_button" value="PYC">Payload communications</button></td>
                         <td><button type="submit" name="clicked_button" value="SPT1">Take photo in one minute</button></td>
-
                     </tr>
                     <tr>
-                        <td><button type="submit" name="clicked_button" value="SBI1">Beacon interval one minute</button></td>
-                        <td><button type="submit" name="clicked_button" value="SBI3">Beacon interval three minutes</button></td>
+                        <td><button type="submit" name="clicked_button" value="SBI0">Turn off beacon</button></td>
+                        <td><button type="submit" name="clicked_button" value="SBI1">Beacon every minute</button></td>
                     </tr>
                     <tr>
-                        <td><button type="submit" name="clicked_button" value="GTY">Get telemetry</button></td>
+                        <td><button type="submit" name="clicked_button" value="SBI3">Beacon every three minutes</button></td>
+                        <td><button type="submit" name="clicked_button" value="CallSign">Transmit call sign</button></td>
+                    </tr>
+                    <tr>
                         <td><button type="submit" name="clicked_button" value="GPW">Get power</button></td>
+                        <td><button type="submit" name="clicked_button" value="GTY">Get telemetry</button></td>
                     </tr>
                     <tr>
-                        <td><button type="submit" name="clicked_button" value="CallSign">Transmit call sign</button>
-                        </td>
-                        <td><button type="submit" name="clicked_button" value="SDT1">Start SSDV in one minute</button>
-                        </td>
-                    </tr>
-                    <tr></tr>
-                    <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
-                    <td></td>
+                        <td><button type="submit" name="clicked_button" value="SDT1">Start SSDV in one minute</button></td>
+                        <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
                     </tr>
                 </tbody>
             </table>
