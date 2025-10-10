@@ -109,7 +109,6 @@ def generate_cubesat_tle(cubesat_name, catalog_num, deployment_date,
     # Fetch current ISS TLE
     print("Fetching current ISS TLE...")
     name, line1, line2 = fetch_iss_tle()
-    print(line1)
     # Parse ISS TLE
     iss_l1 = parse_tle_line1(line1)
     iss_l2 = parse_tle_line2(line2)
