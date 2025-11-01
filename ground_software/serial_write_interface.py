@@ -5,7 +5,7 @@
  @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
  
- This program provides the radio interface for sending commands
+ This program provides the radio interface for sending commands from the database to the satellite
  
 """
 
@@ -15,7 +15,7 @@ import serial
 import time
 
 BAUD_RATE = 19200
-
+retry_delay = 5  # seconds
 
 def serial_write():
 
@@ -23,8 +23,9 @@ def serial_write():
     connection = sqlite3.connect("./instance/radio.db")
     cursor = connection.cursor()
 
-    # naming serial connection
-    serial_port = "/dev/tty.usbserial-AL062R13"
+    # serial connection
+    # serial_port = "/dev/tty.usbserial-AL062R13"
+    serial_port = "/tmp/radio"
 
     while True:
         try:
@@ -32,7 +33,8 @@ def serial_write():
             radio_serial = serial.Serial(serial_port, BAUD_RATE)
             break
         except:
-            time.sleep(5)
+            print(f"Failed to connect to serial port {serial_port}, retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
             continue
 
     while True:

@@ -21,15 +21,16 @@ RECEIVE_FREQUENCY = b"\x0D"
 
 BAUD_RATE = 19200
 
-command_link = serial.Serial("/tmp/ground_station", BAUD_RATE)
+response_interval = 5  # seconds
+ground_station = serial.Serial("/tmp/ground_station", BAUD_RATE)
 print("Radio simulator started")
 
 def reader(): 
     while True:
         try:
             transmission = (
-                command_link.read_until(expected=FEND)
-                + command_link.read_until(expected=FEND)
+                ground_station.read_until(expected=FEND)
+                + ground_station.read_until(expected=FEND)
             )[1:-1]
             print(f"Received data: {transmission}")
         except:
@@ -39,10 +40,10 @@ def writer():
     timer = time.time()
     counter = 1
     while True:
-        if time.time() - timer > 1:
+        if time.time() - timer > response_interval:
             print("Sending data")
             try:
-                command_link.write(FEND + REMOTE_FRAME + f"Data from satellite {counter}".encode("utf-8") + FEND)
+                ground_station.write(FEND + REMOTE_FRAME + f"Data from satellite {counter}".encode("utf-8") + FEND)
             except:
                 pass
             timer = time.time()

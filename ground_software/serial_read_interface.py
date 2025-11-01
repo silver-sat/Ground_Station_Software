@@ -5,7 +5,7 @@
  @author Dominik Honzak (dominik@silversat.org)
  @brief SilverSat User and radio Doppler interface
  
- This program provides the radio interface for recieving commands
+ This program provides the radio interface for receiving responses and storing them in the database
  
 """
 
@@ -15,13 +15,15 @@ import serial
 import time
 
 BAUD_RATE = 19200
+retry_delay = 5  # seconds
 FEND = b"\xC0"
 
 
 def serial_read():
 
-    # naming serial connection
-    serial_port = "/dev/tty.usbserial-AL062R13"
+    # serial connection
+    # serial_port = "/dev/tty.usbserial-AL062R13"
+    serial_port = "/tmp/radio"
 
     while True:
         try:
@@ -29,7 +31,8 @@ def serial_read():
             radio_serial = serial.Serial(serial_port, BAUD_RATE)
             break
         except:
-            time.sleep(5)
+            print(f"Failed to connect to serial port {serial_port}, retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
             continue
 
     # open database

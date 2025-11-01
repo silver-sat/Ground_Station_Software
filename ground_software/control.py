@@ -122,14 +122,10 @@ def index():
                 case _:
                     pass
 
-    # Update responses
-    database = get_database()
-    responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
-    ).fetchall()
+    # Render template
 
     return render_template(
-        "control.html", responses=responses, command_sequence=command_sequence
+        "control.html", responses=[], command_sequence=command_sequence
     )
 
 
@@ -137,7 +133,9 @@ def index():
 def latest_responses():
     database = get_database()
     responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
+        "SELECT * FROM responses "
+        "WHERE CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+        "ORDER BY timestamp DESC LIMIT 25"
     ).fetchall()
     return jsonify(
         [
