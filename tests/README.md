@@ -16,7 +16,7 @@ Start the radio simulator:
 
 Open a new terminal. Start the ground station software:
 
-```./operate_satellite.py```
+```./operate_satellite.sh```
 
 Track and engage a satellite using the gpredict interface.
 

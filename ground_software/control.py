@@ -73,6 +73,16 @@ def callsign():
     database.execute("INSERT INTO transmissions (command) VALUES (?)", (command,))
     database.commit()
 
+# Persist the "clear responses" timestamp in the database
+
+def clear_responses():
+    database = get_database()
+    database.execute(
+        "INSERT OR REPLACE INTO settings (key) VALUES (?)",
+        ("responses_cleared_at",)
+    )
+    database.commit()
+
 
 # User interface
 
@@ -117,28 +127,39 @@ def index():
                     callsign()
                 case "SDT1":
                     insert(sign(f"SSDVTimes {now1m()}"))
-                case "Refresh":
-                    pass
+                case "ClearResponses":
+                    clear_responses()
                 case _:
                     pass
 
-    # Update responses
-    database = get_database()
-    responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
-    ).fetchall()
+    # Render template
 
     return render_template(
-        "control.html", responses=responses, command_sequence=command_sequence
+        "control.html", responses=[], command_sequence=command_sequence
     )
 
 
 @blueprint.route("/latest_responses")
 def latest_responses():
+    # get cleared_at timestamp if it exists
     database = get_database()
-    responses = database.execute(
-        "SELECT * FROM responses ORDER BY timestamp DESC LIMIT 25"
-    ).fetchall()
+    row = database.execute(
+        "SELECT value FROM settings WHERE key = ?", ("responses_cleared_at",)
+    ).fetchone()
+    if row and row["value"]:
+        cleared_at = row["value"]
+        responses = database.execute(
+            "SELECT * FROM responses "
+            "WHERE timestamp > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+            "ORDER BY id DESC LIMIT 25",
+            (cleared_at,),
+        ).fetchall()
+    else:
+        responses = database.execute(
+            "SELECT * FROM responses "
+            "WHERE CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+            "ORDER BY id DESC LIMIT 25"
+        ).fetchall()
     return jsonify(
         [
             {

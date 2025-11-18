@@ -79,7 +79,7 @@
                     </tr>
                     <tr>
                         <td><button type="submit" name="clicked_button" value="SDT1">Start SSDV in one minute</button></td>
-                        <td><button type="submit" name="clicked_button" value="Refresh">Refresh data</button></td>
+                        <td><button type="submit" name="clicked_button" value="ClearResponses">Clear responses</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -155,7 +155,7 @@
             });
         updateClock();
     }
-
-    setInterval(fetchLatestResponses, 1000); // Fetch latest responses every second
+    fetchLatestResponses();
+    setInterval(fetchLatestResponses, 1000); // Fetch responses every second
 </script>
 {% endblock %}

@@ -58,11 +58,9 @@ Create a secret.txt file in the Ground_Station_Software directory that matches t
 
 From the Ground_Station_Software directory, execute
 
-```./ground_software/ground_station.py```
+```./ground_software/ground_station.py portname```
 
-This will start the gpredict interface module, the serial read task, the serial write task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
-
-If you receive an error message, you may need to modify the serial port name in serial_read_interface.py and serial_write_interface.py to match the port name of the radio on your system.
+where *portname* is the name of the serial port for the radio. This will start the gpredict interface module, the serial read task, the serial write task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
 
 Open a browser and navigate to the address displayed in the Flask startup log, typically http://127.0.0.1:5000/. Ensure the SilverSat user interface is displayed. 
 
@@ -74,7 +72,7 @@ Start gpredict and open Radio Control. Target SilverSat and Track it. Then selec
 
 With the setup steps above completed, you can operate the satellite with these steps.
 
-1. In a terminal, navigate to the Ground_Station_Software directory and run ```./operate_satellite.sh```.
+1. In a terminal, navigate to the Ground_Station_Software directory and run ```./operate_satellite.sh portname``` where *portname* is the name of the radio serial port.
 
 5. Track and engage the satellite using the gpredict interface.
 
