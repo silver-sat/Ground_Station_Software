@@ -22,7 +22,7 @@ SPACE = b"\x20"
 # Configuration
 initial_frequency = b"433000000"
 alternate_frequency = b"433001000"
-test_doppler = True
+test_doppler = False
 gpredict_address = "127.0.0.1"
 gpredict_port = 4532
 gpredict_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
