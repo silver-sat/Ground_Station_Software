@@ -33,15 +33,16 @@ a {
     color: var(--btnbg);
 }
 
-nav {
-    background: transparent;
-    padding: 20px;
+.header-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-    nav img {
-        display: block;
-        margin: auto auto;
-    }
+.header-logo {
+    height: 60px;
+    width: auto;
+}
 
 .content, p {
     padding: 2rem;
@@ -51,11 +52,11 @@ nav {
 
     .content > header {
         border-bottom: 3px solid var(--btnbg);
+        padding-bottom: 1rem;
     }
 
         .content > header h1 {
-            flex: auto;
-            margin: 1rem 0 0.25rem 0;
+            margin: 0;
         }
 
 .flash {
