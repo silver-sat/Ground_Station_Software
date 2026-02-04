@@ -24,11 +24,11 @@ Now install Flask using this command:
 
 ```pip install Flask```
 
-and install Waitress with this command:
+and optionally install Waitress with this command:
 
 ```pip install waitress```
 
-(Waitress is not used in the test configuration. It is planned for use in the production configuration to enable remote access. The Flask test server is not secure.)
+(Waitress is not used in the current configuration. It is planned for use in the production configuration to enable remote access. The Flask test server is not secure.)
 
 Install pyserial using this command
 
@@ -39,8 +39,6 @@ Now initialize the database with the following command
 ```flask --app ground_software init-database```
 
 This will create the radio.db database in the instance folder, which is used to store commands and responses.
-
-Set the appropriate value for the radio serial port in the serial_read_interface and serial_write_interface modules.
 
 ## Installing the Radio Doppler Control
 
