@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<h1>{% block title %}Ground Control{% endblock %}
-
-
-</h1>
+<div class="header-container">
+    <img src="{{url_for('static', filename='silversat_logo.png')}}" class="header-logo"/>
+    <h1>{% block title %}Ground Control{% endblock %}</h1>
+</div>
 {% endblock %}
 
 {% block content %}
