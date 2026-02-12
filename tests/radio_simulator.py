@@ -10,7 +10,6 @@
 import logging
 import serial
 import time
-import threading
 
 ## KISS special characters
 
@@ -26,19 +25,50 @@ logging.info("Starting radio simulator")
 # Serial connection
 PORT = "/tmp/ground_station"
 BAUD_RATE = 19200
+RETRY_DELAY_SECONDS = 2
 logging.info("Opening serial port %s @ %d", PORT, BAUD_RATE)
-ground_station = serial.Serial(PORT, BAUD_RATE)
+
+
+def open_serial_with_retry(port, baud_rate):
+    while True:
+        try:
+            return serial.Serial(port, baud_rate, timeout=1)
+        except Exception as error:
+            logging.warning(
+                "Unable to open %s yet (%s). Retrying in %d seconds...",
+                port,
+                error,
+                RETRY_DELAY_SECONDS,
+            )
+            time.sleep(RETRY_DELAY_SECONDS)
+
+
+ground_station = open_serial_with_retry(PORT, BAUD_RATE)
+
+
+def read_kiss_payload(serial_connection):
+    while True:
+        first = serial_connection.read(1)
+        if not first:
+            return None
+        if first == FEND:
+            break
+
+    payload = serial_connection.read_until(expected=FEND)
+    if not payload:
+        return None
+    if payload[-1:] != FEND:
+        return None
+    return payload[:-1]
 
 def processor():
     sequence_number = 0
     while True:
         try:
-            transmission = (
-                ground_station.read_until(expected=FEND)
-            )[:-1]  # strip FEND
+            transmission = read_kiss_payload(ground_station)
             if not transmission:
                 continue
-            logging.debug("Received data: %r", transmission)
+            logging.debug("Received frame payload: %r", transmission)
         except Exception:
             continue
 

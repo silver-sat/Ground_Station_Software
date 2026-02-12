@@ -11,6 +11,7 @@
 
 # imports
 import argparse
+import os
 import sqlite3
 import serial
 import time
@@ -21,12 +22,29 @@ retry_delay = 5  # seconds
 FEND = b"\xC0"
 
 
+def read_kiss_frame(radio_serial):
+    while True:
+        first = radio_serial.read(1)
+        if not first:
+            return None
+        if first == FEND:
+            break
+
+    payload = radio_serial.read_until(expected=FEND)
+    if not payload:
+        return None
+    if payload[-1:] != FEND:
+        return None
+
+    return FEND + payload
+
+
 def serial_read(serial_port):
     """Read from the given serial_port and write responses to the database."""
     while True:
         try:
             # opening serial connection
-            radio_serial = serial.Serial(serial_port, BAUD_RATE)
+            radio_serial = serial.Serial(serial_port, BAUD_RATE, timeout=1)
             break
         except Exception:
             print(f"Failed to connect to serial port {serial_port}, retrying in {retry_delay} seconds...")
@@ -34,16 +52,21 @@ def serial_read(serial_port):
             continue
 
     # open database
-    connection = sqlite3.connect("instance/radio.db")
+    db_path = os.path.abspath("./instance/radio.db")
+    connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
+    connection.execute("PRAGMA journal_mode=WAL")
+    connection.execute("PRAGMA busy_timeout = 5000")
 
     # read the responses from the radio
     try:
         while True:
             try:
-                response = radio_serial.read_until(expected=FEND) + radio_serial.read_until(expected=FEND)
+                response = read_kiss_frame(radio_serial)
             except Exception:
                 break
+            if response is None:
+                continue
             cursor.execute("INSERT INTO responses (response) VALUES (?)", (response,))
             connection.commit()
     except KeyboardInterrupt:
