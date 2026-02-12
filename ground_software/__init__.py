@@ -14,9 +14,13 @@ from flask import Flask
 
 def create_app(test_config=None):
     application = Flask(__name__, instance_relative_config=True)
+    default_secret_path = os.path.abspath(
+        os.path.join(application.root_path, os.pardir, "secret.txt")
+    )
     application.config.from_mapping(
         SECRET_KEY="dev",
         DATABASE=os.path.join(application.instance_path, "radio.db"),
+        COMMAND_SECRET_PATH=default_secret_path,
     )
 
     if test_config is None:
