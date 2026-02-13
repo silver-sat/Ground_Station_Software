@@ -32,7 +32,7 @@ def claim_next_transmission(connection, cursor):
             "WHERE id = ("
             "  SELECT id FROM transmissions "
             "  WHERE status = 'pending' "
-            "  ORDER BY id ASC LIMIT 1"
+            "  ORDER BY message_sequence ASC LIMIT 1"
             ") "
             "RETURNING id, timestamp, command, status"
         ).fetchone()
@@ -43,7 +43,7 @@ def claim_next_transmission(connection, cursor):
         cursor.execute("BEGIN IMMEDIATE")
         row = cursor.execute(
             "SELECT id, timestamp, command, status "
-            "FROM transmissions WHERE status='pending' ORDER BY id ASC LIMIT 1"
+            "FROM transmissions WHERE status='pending' ORDER BY message_sequence ASC LIMIT 1"
         ).fetchone()
         if row is None:
             connection.commit()

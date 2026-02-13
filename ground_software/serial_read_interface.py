@@ -22,6 +22,28 @@ retry_delay = 5  # seconds
 FEND = b"\xC0"
 
 
+def next_message_sequence(connection, cursor):
+    cursor.execute("BEGIN IMMEDIATE")
+    row = cursor.execute(
+        "SELECT value FROM settings WHERE key = ?", ("message_sequence",)
+    ).fetchone()
+    if row and row[0] is not None:
+        try:
+            current_sequence = int(row[0])
+        except (TypeError, ValueError):
+            current_sequence = 1
+    else:
+        current_sequence = 1
+
+    cursor.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("message_sequence", str(current_sequence + 1)),
+    )
+    connection.commit()
+    return current_sequence
+
+
 def read_kiss_frame(radio_serial):
     while True:
         first = radio_serial.read(1)
@@ -67,7 +89,11 @@ def serial_read(serial_port):
                 break
             if response is None:
                 continue
-            cursor.execute("INSERT INTO responses (response) VALUES (?)", (response,))
+            message_sequence = next_message_sequence(connection, cursor)
+            cursor.execute(
+                "INSERT INTO responses (message_sequence, response) VALUES (?, ?)",
+                (message_sequence, response),
+            )
             connection.commit()
     except KeyboardInterrupt:
         print("Interrupted, closing serial connection.")
