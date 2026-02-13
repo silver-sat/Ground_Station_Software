@@ -28,14 +28,38 @@ gpredict_port = 4532
 gpredict_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
+def next_message_sequence(connection, cursor):
+    cursor.execute("BEGIN IMMEDIATE")
+    row = cursor.execute(
+        "SELECT value FROM settings WHERE key = ?", ("message_sequence",)
+    ).fetchone()
+    if row and row[0] is not None:
+        try:
+            current_sequence = int(row[0])
+        except (TypeError, ValueError):
+            current_sequence = 1
+    else:
+        current_sequence = 1
+
+    cursor.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("message_sequence", str(current_sequence + 1)),
+    )
+    connection.commit()
+    return current_sequence
+
+
 def database_write(transmit_frequency, receive_frequency):
     """Write the doppler transaction to the database"""
     try:
         connection = sqlite3.connect("./instance/radio.db")
         cursor = connection.cursor()
+        message_sequence = next_message_sequence(connection, cursor)
         cursor.execute(
-            "INSERT INTO transmissions (command) VALUES (?)",
+            "INSERT INTO transmissions (message_sequence, command) VALUES (?, ?)",
             (
+                message_sequence,
                 FEND
                 + DOPPLER_FREQUENCIES
                 + transmit_frequency

@@ -48,7 +48,11 @@ def insert(command):
     database = get_database()
     print(f"Command: {command}")
     command = FEND + REMOTE_FRAME + command + FEND
-    database.execute("INSERT INTO transmissions (command) VALUES (?)", (command,))
+    message_sequence = next_message_sequence()
+    database.execute(
+        "INSERT INTO transmissions (message_sequence, command) VALUES (?, ?)",
+        (message_sequence, command),
+    )
     database.commit()
     notify_transmission()
 
@@ -75,7 +79,11 @@ def now1m():
 def callsign():
     database = get_database()
     command = FEND + CALLSIGN + FEND
-    database.execute("INSERT INTO transmissions (command) VALUES (?)", (command,))
+    message_sequence = next_message_sequence()
+    database.execute(
+        "INSERT INTO transmissions (message_sequence, command) VALUES (?, ?)",
+        (message_sequence, command),
+    )
     database.commit()
     notify_transmission()
 
@@ -151,6 +159,33 @@ def next_command_sequence():
         raise
 
 
+def next_message_sequence():
+    database = get_database()
+    try:
+        database.execute("BEGIN IMMEDIATE")
+        row = database.execute(
+            "SELECT value FROM settings WHERE key = ?", ("message_sequence",)
+        ).fetchone()
+        if row and row["value"] is not None:
+            try:
+                current_sequence = int(row["value"])
+            except (TypeError, ValueError):
+                current_sequence = 1
+        else:
+            current_sequence = 1
+
+        database.execute(
+            "INSERT INTO settings (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            ("message_sequence", str(current_sequence + 1)),
+        )
+        database.commit()
+        return current_sequence
+    except Exception:
+        database.rollback()
+        raise
+
+
 def get_signing_secret():
     global _SIGNING_SECRET
     if _SIGNING_SECRET is not None:
@@ -171,13 +206,17 @@ def get_signing_secret():
 
     return _SIGNING_SECRET
 
-# Persist the "clear responses" timestamp in the database
+# Persist the "clear responses" sequence in the database
 
 def clear_responses():
     database = get_database()
+    row = database.execute(
+        "SELECT COALESCE(MAX(message_sequence), 0) AS max_sequence FROM responses"
+    ).fetchone()
+    cleared_sequence = row["max_sequence"] if row else 0
     database.execute(
-        "INSERT OR REPLACE INTO settings (key) VALUES (?)",
-        ("responses_cleared_at",)
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+        ("responses_cleared_sequence", str(cleared_sequence)),
     )
     database.commit()
 
@@ -278,24 +317,24 @@ def index():
 
 @blueprint.route("/latest_responses")
 def latest_responses():
-    # get cleared_at timestamp if it exists
+    # get cleared sequence if it exists
     database = get_database()
     row = database.execute(
-        "SELECT value FROM settings WHERE key = ?", ("responses_cleared_at",)
+        "SELECT value FROM settings WHERE key = ?", ("responses_cleared_sequence",)
     ).fetchone()
     if row and row["value"]:
-        cleared_at = row["value"]
+        cleared_sequence = int(row["value"])
         responses = database.execute(
             "SELECT * FROM responses "
-            "WHERE timestamp > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
-            "ORDER BY id DESC LIMIT 25",
-            (cleared_at,),
+            "WHERE message_sequence > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+            "ORDER BY message_sequence DESC LIMIT 25",
+            (cleared_sequence,),
         ).fetchall()
     else:
         responses = database.execute(
             "SELECT * FROM responses "
             "WHERE CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
-            "ORDER BY id DESC LIMIT 25"
+            "ORDER BY message_sequence DESC LIMIT 25"
         ).fetchall()
     return jsonify(
         [
