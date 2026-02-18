@@ -60,6 +60,8 @@ From the Ground_Station_Software directory, execute
 
 where *portname* is the name of the serial port for the radio and *logportname* is the serial port that emits text radio log lines (optional, default `/tmp/radio_log`). This will start the gpredict interface module, the serial read task, the serial write task, the serial radio log task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
 
+Use `Ctrl+C` (or send `SIGTERM`) to stop all tasks with graceful shutdown.
+
 Open a browser and navigate to the address displayed in the Flask startup log, typically http://127.0.0.1:5000/. Ensure the SilverSat user interface is displayed. 
 
 You may now enter commands to the satellite by clicking a button or typing a command on the command line and pressing enter. Responses from the satellite will be displayed at the bottom of the window, most recent response first.
