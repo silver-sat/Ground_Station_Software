@@ -87,25 +87,32 @@ def process_command(command, frequency, socket, transmit_frequency, receive_freq
     return transmit_frequency, receive_frequency
 
 
-def gpredict_read():
+def gpredict_read(shutdown_event=None):
     """Manage the gpredict interface"""
     gpredict_server.bind((gpredict_address, gpredict_port))
     gpredict_server.listen(0)
-    while True:
+    gpredict_server.settimeout(1)
+    while not (shutdown_event and shutdown_event.is_set()):
         logging.info(
             f"Gpredict interface waiting for a connection on: {gpredict_address}:{gpredict_port}"
         )
-        socket, address = gpredict_server.accept()
+        try:
+            socket, address = gpredict_server.accept()
+        except TimeoutError:
+            continue
         logging.info(f"Connected: {address[0],address[1]}")
+        socket.settimeout(1)
         receive_frequency = initial_frequency
         transmit_frequency = initial_frequency
         test_frequency = initial_frequency
 
-        while True:
+        while not (shutdown_event and shutdown_event.is_set()):
             try:
                 data = socket.recv(1024)
                 if not data:
                     break
+            except TimeoutError:
+                continue
             except Exception as e:
                 logging.error(f"Error receiving data: {e}")
                 socket.close()
@@ -128,6 +135,11 @@ def gpredict_read():
 
         socket.close()
         logging.info(f"Disconnected: {address[0],address[1]}")
+
+    try:
+        gpredict_server.close()
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

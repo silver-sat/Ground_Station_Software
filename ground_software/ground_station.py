@@ -8,6 +8,8 @@ task manager for ground station
 import argparse
 import threading
 import subprocess
+import signal
+import time
 
 from ground_software import gpredict_interface
 from ground_software import serial_log_interface
@@ -15,8 +17,8 @@ from ground_software import serial_read_interface
 from ground_software import serial_write_interface
 
 
-def gpredict_task():
-    gpredict_interface.gpredict_read()
+def gpredict_task(shutdown_event):
+    gpredict_interface.gpredict_read(shutdown_event=shutdown_event)
 
 
 if __name__ == "__main__":
@@ -36,26 +38,55 @@ if __name__ == "__main__":
     port = args.port
     log_port = args.log_port
 
+    shutdown_event = threading.Event()
+
     process = subprocess.Popen(["flask", "--app", "ground_software", "run", "--debug"])
 
-    gpredict_thread = threading.Thread(target=gpredict_task)
+    gpredict_thread = threading.Thread(target=gpredict_task, args=(shutdown_event,))
     serial_read_thread = threading.Thread(
-        target=serial_read_interface.serial_read, args=(port,)
+        target=serial_read_interface.serial_read, args=(port, shutdown_event)
     )
     serial_write_thread = threading.Thread(
-        target=serial_write_interface.serial_write, args=(port,)
+        target=serial_write_interface.serial_write, args=(port, shutdown_event)
     )
     serial_log_thread = threading.Thread(
-        target=serial_log_interface.serial_log_read, args=(log_port,)
+        target=serial_log_interface.serial_log_read, args=(log_port, shutdown_event)
     )
 
-    gpredict_thread.start()
-    serial_read_thread.start()
-    serial_write_thread.start()
-    serial_log_thread.start()
+    threads = [
+        gpredict_thread,
+        serial_read_thread,
+        serial_write_thread,
+        serial_log_thread,
+    ]
 
-    gpredict_thread.join()
-    serial_read_thread.join()
-    serial_write_thread.join()
-    serial_log_thread.join()
-    process.wait()
+    def request_shutdown(signum=None, frame=None):
+        shutdown_event.set()
+
+    signal.signal(signal.SIGINT, request_shutdown)
+    signal.signal(signal.SIGTERM, request_shutdown)
+
+    for thread in threads:
+        thread.start()
+
+    try:
+        while not shutdown_event.is_set():
+            if process.poll() is not None:
+                shutdown_event.set()
+                break
+            if not any(thread.is_alive() for thread in threads):
+                shutdown_event.set()
+                break
+            time.sleep(0.2)
+    finally:
+        shutdown_event.set()
+        for thread in threads:
+            thread.join(timeout=3)
+
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)

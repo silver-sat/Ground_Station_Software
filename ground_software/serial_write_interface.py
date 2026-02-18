@@ -60,8 +60,8 @@ def claim_next_transmission(connection, cursor):
         return row
 
 
-def drain_pending_transmissions(connection, cursor, radio_serial):
-    while True:
+def drain_pending_transmissions(connection, cursor, radio_serial, shutdown_event=None):
+    while not (shutdown_event and shutdown_event.is_set()):
         row = claim_next_transmission(connection, cursor)
         if row is None:
             return
@@ -74,7 +74,7 @@ def drain_pending_transmissions(connection, cursor, radio_serial):
         connection.commit()
 
 
-def serial_write(serial_port):
+def serial_write(serial_port, shutdown_event=None):
     # open database
     db_path = os.path.abspath("./instance/radio.db")
     connection = sqlite3.connect(db_path)
@@ -83,6 +83,7 @@ def serial_write(serial_port):
     connection.execute("PRAGMA busy_timeout = 5000")
 
     notify_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    notify_socket.settimeout(1)
     if os.path.exists(NOTIFY_SOCKET_PATH):
         try:
             os.unlink(NOTIFY_SOCKET_PATH)
@@ -93,7 +94,8 @@ def serial_write(serial_port):
     # serial connection
     logging.info("Opening serial port %s @ %d", serial_port, BAUD_RATE)
 
-    while True:
+    radio_serial = None
+    while not (shutdown_event and shutdown_event.is_set()):
         try:
             # opening serial connection with a short timeout
             radio_serial = serial.Serial(serial_port, BAUD_RATE, timeout=1)
@@ -103,12 +105,26 @@ def serial_write(serial_port):
             time.sleep(retry_delay)
             continue
 
+    if radio_serial is None:
+        notify_socket.close()
+        if os.path.exists(NOTIFY_SOCKET_PATH):
+            try:
+                os.unlink(NOTIFY_SOCKET_PATH)
+            except Exception:
+                pass
+        connection.close()
+        return
+
     try:
-        drain_pending_transmissions(connection, cursor, radio_serial)
-        while True:
+        drain_pending_transmissions(connection, cursor, radio_serial, shutdown_event)
+        while not (shutdown_event and shutdown_event.is_set()):
             try:
                 notify_socket.recv(1)
-                drain_pending_transmissions(connection, cursor, radio_serial)
+                drain_pending_transmissions(
+                    connection, cursor, radio_serial, shutdown_event
+                )
+            except socket.timeout:
+                continue
             except Exception as exc:
                 logging.exception("Serial write loop error: %s", exc)
                 time.sleep(1)

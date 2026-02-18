@@ -40,9 +40,9 @@ def read_kiss_frame(radio_serial):
     return FEND + payload
 
 
-def serial_read(serial_port):
+def serial_read(serial_port, shutdown_event=None):
     """Read from the given serial_port and write responses to the database."""
-    while True:
+    while not (shutdown_event and shutdown_event.is_set()):
         try:
             # opening serial connection
             radio_serial = serial.Serial(serial_port, BAUD_RATE, timeout=1)
@@ -51,6 +51,9 @@ def serial_read(serial_port):
             print(f"Failed to connect to serial port {serial_port}, retrying in {retry_delay} seconds...")
             time.sleep(retry_delay)
             continue
+
+    if shutdown_event and shutdown_event.is_set():
+        return
 
     # open database
     db_path = os.path.abspath("./instance/radio.db")
@@ -61,7 +64,7 @@ def serial_read(serial_port):
 
     # read the responses from the radio
     try:
-        while True:
+        while not (shutdown_event and shutdown_event.is_set()):
             try:
                 response = read_kiss_frame(radio_serial)
             except Exception:

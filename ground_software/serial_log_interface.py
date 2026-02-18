@@ -15,8 +15,8 @@ BAUD_RATE = 19200
 retry_delay = 5  # seconds
 
 
-def serial_log_read(serial_port):
-    while True:
+def serial_log_read(serial_port, shutdown_event=None):
+    while not (shutdown_event and shutdown_event.is_set()):
         try:
             log_serial = serial.Serial(serial_port, BAUD_RATE, timeout=1)
             break
@@ -27,6 +27,9 @@ def serial_log_read(serial_port):
             time.sleep(retry_delay)
             continue
 
+    if shutdown_event and shutdown_event.is_set():
+        return
+
     db_path = os.path.abspath("./instance/radio.db")
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
@@ -34,7 +37,7 @@ def serial_log_read(serial_port):
     connection.execute("PRAGMA busy_timeout = 5000")
 
     try:
-        while True:
+        while not (shutdown_event and shutdown_event.is_set()):
             try:
                 raw_line = log_serial.readline()
             except Exception:
