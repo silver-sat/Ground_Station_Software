@@ -9,10 +9,10 @@ import argparse
 import threading
 import subprocess
 
-import gpredict_interface
-import serial_log_interface
-import serial_read_interface
-import serial_write_interface
+from ground_software import gpredict_interface
+from ground_software import serial_log_interface
+from ground_software import serial_read_interface
+from ground_software import serial_write_interface
 
 
 def gpredict_task():
