@@ -56,6 +56,14 @@ def _ensure_base_tables(database):
         ")"
     )
     database.execute(
+        "CREATE TABLE IF NOT EXISTS radio_logs("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+        "message_sequence INTEGER, "
+        "log_line TEXT NOT NULL"
+        ")"
+    )
+    database.execute(
         "CREATE TABLE IF NOT EXISTS settings("
         "key TEXT PRIMARY KEY, "
         "value DEFAULT CURRENT_TIMESTAMP"
@@ -68,6 +76,8 @@ def _ensure_message_sequence_columns(database):
         database.execute("ALTER TABLE transmissions ADD COLUMN message_sequence INTEGER")
     if not _column_exists(database, "responses", "message_sequence"):
         database.execute("ALTER TABLE responses ADD COLUMN message_sequence INTEGER")
+    if not _column_exists(database, "radio_logs", "message_sequence"):
+        database.execute("ALTER TABLE radio_logs ADD COLUMN message_sequence INTEGER")
 
 
 def _backfill_message_sequence(database):
@@ -82,7 +92,12 @@ def _backfill_message_sequence(database):
     max_rsp_row = database.execute(
         "SELECT COALESCE(MAX(message_sequence), 0) AS max_seq FROM responses"
     ).fetchone()
-    max_existing_sequence = max(max_tx_row["max_seq"], max_rsp_row["max_seq"])
+    max_log_row = database.execute(
+        "SELECT COALESCE(MAX(message_sequence), 0) AS max_seq FROM radio_logs"
+    ).fetchone()
+    max_existing_sequence = max(
+        max_tx_row["max_seq"], max_rsp_row["max_seq"], max_log_row["max_seq"]
+    )
 
     database.execute(
         "INSERT INTO _message_order(source, row_id, seq) "
@@ -90,7 +105,9 @@ def _backfill_message_sequence(database):
         "FROM ("
         "  SELECT 't' AS source, id AS row_id, timestamp FROM transmissions WHERE message_sequence IS NULL "
         "  UNION ALL "
-        "  SELECT 'r' AS source, id AS row_id, timestamp FROM responses WHERE message_sequence IS NULL"
+        "  SELECT 'r' AS source, id AS row_id, timestamp FROM responses WHERE message_sequence IS NULL "
+        "  UNION ALL "
+        "  SELECT 'l' AS source, id AS row_id, timestamp FROM radio_logs WHERE message_sequence IS NULL"
         ")",
         (max_existing_sequence,),
     )
@@ -105,6 +122,11 @@ def _backfill_message_sequence(database):
         "SELECT seq FROM _message_order WHERE source='r' AND row_id = responses.id"
         ") WHERE message_sequence IS NULL"
     )
+    database.execute(
+        "UPDATE radio_logs SET message_sequence = ("
+        "SELECT seq FROM _message_order WHERE source='l' AND row_id = radio_logs.id"
+        ") WHERE message_sequence IS NULL"
+    )
 
     database.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_transmissions_message_sequence "
@@ -113,6 +135,10 @@ def _backfill_message_sequence(database):
     database.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_responses_message_sequence "
         "ON responses(message_sequence)"
+    )
+    database.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_radio_logs_message_sequence "
+        "ON radio_logs(message_sequence)"
     )
 
 
@@ -147,7 +173,12 @@ def _update_message_sequence_setting(database):
     max_rsp_row = database.execute(
         "SELECT COALESCE(MAX(message_sequence), 0) AS max_seq FROM responses"
     ).fetchone()
-    next_sequence = max(max_tx_row["max_seq"], max_rsp_row["max_seq"], 0) + 1
+    max_log_row = database.execute(
+        "SELECT COALESCE(MAX(message_sequence), 0) AS max_seq FROM radio_logs"
+    ).fetchone()
+    next_sequence = max(
+        max_tx_row["max_seq"], max_rsp_row["max_seq"], max_log_row["max_seq"], 0
+    ) + 1
     database.execute(
         "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
         ("message_sequence", str(next_sequence)),
@@ -177,6 +208,9 @@ def _refresh_views(database):
         "CAST(SUBSTR(response, 3, LENGTH(response) - 3) AS TEXT) AS message "
         "FROM responses "
         "WHERE CAST(SUBSTR(response, 3, 5) AS TEXT) NOT IN ('ACK D', 'RES D') "
+        "UNION ALL "
+        "SELECT message_sequence, timestamp, 'radio_log' AS type, log_line AS message "
+        "FROM radio_logs "
         "ORDER BY message_sequence;"
     )
 

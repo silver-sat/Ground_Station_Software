@@ -10,6 +10,7 @@ import threading
 import subprocess
 
 import gpredict_interface
+import serial_log_interface
 import serial_read_interface
 import serial_write_interface
 
@@ -26,8 +27,14 @@ if __name__ == "__main__":
         default="/tmp/radio",
         help="Serial port path for read/write interfaces (default: /tmp/radio)",
     )
+    parser.add_argument(
+        "--log-port",
+        default="/tmp/radio_log",
+        help="Serial port path for radio text log interface (default: /tmp/radio_log)",
+    )
     args = parser.parse_args()
     port = args.port
+    log_port = args.log_port
 
     process = subprocess.Popen(["flask", "--app", "ground_software", "run", "--debug"])
 
@@ -38,12 +45,17 @@ if __name__ == "__main__":
     serial_write_thread = threading.Thread(
         target=serial_write_interface.serial_write, args=(port,)
     )
+    serial_log_thread = threading.Thread(
+        target=serial_log_interface.serial_log_read, args=(log_port,)
+    )
 
     gpredict_thread.start()
     serial_read_thread.start()
     serial_write_thread.start()
+    serial_log_thread.start()
 
     gpredict_thread.join()
     serial_read_thread.join()
     serial_write_thread.join()
+    serial_log_thread.join()
     process.wait()
