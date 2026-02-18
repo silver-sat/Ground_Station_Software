@@ -137,27 +137,7 @@
 </style>
 
 <script>
-    const MIN_POLL_MS = 1000;
-    const MAX_POLL_MS = 10000;
-    let pollDelayMs = MIN_POLL_MS;
-    let pollTimer = null;
-    let requestInFlight = false;
-    let maxMessageSequence = 0;
-
-    function scheduleNextPoll() {
-        if (pollTimer) {
-            clearTimeout(pollTimer);
-        }
-        pollTimer = setTimeout(fetchLatestResponses, pollDelayMs);
-    }
-
-    function setPollRate(hasNewData) {
-        if (hasNewData) {
-            pollDelayMs = MIN_POLL_MS;
-            return;
-        }
-        pollDelayMs = Math.min(MAX_POLL_MS, Math.round(pollDelayMs * 1.6));
-    }
+    let responseStream = null;
 
     function trimResponses() {
         const responsesDiv = document.getElementById('responses');
@@ -178,9 +158,6 @@
         responsesDiv.innerHTML = '';
         data.forEach(item => {
             responsesDiv.appendChild(buildResponseLine(item));
-            if (item.message_sequence > maxMessageSequence) {
-                maxMessageSequence = item.message_sequence;
-            }
         });
         trimResponses();
     }
@@ -189,52 +166,48 @@
         const responsesDiv = document.getElementById('responses');
         data.forEach(item => {
             responsesDiv.prepend(buildResponseLine(item));
-            if (item.message_sequence > maxMessageSequence) {
-                maxMessageSequence = item.message_sequence;
-            }
         });
         trimResponses();
     }
 
-    function fetchLatestResponses() {
-        if (requestInFlight) {
-            scheduleNextPoll();
-            return;
+    function connectResponseStream() {
+        if (responseStream) {
+            responseStream.close();
         }
+        responseStream = new EventSource('/responses_stream');
 
-        requestInFlight = true;
-        const isIncremental = maxMessageSequence > 0;
-        const url = isIncremental
-            ? `/latest_responses?after_sequence=${maxMessageSequence}`
-            : '/latest_responses';
+        responseStream.addEventListener('snapshot', event => {
+            const data = JSON.parse(event.data);
+            renderFull(data);
+        });
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (isIncremental) {
-                    renderIncremental(data);
-                } else {
-                    renderFull(data);
-                }
-                setPollRate(data.length > 0);
-            })
-            .catch(() => {
-                pollDelayMs = Math.min(MAX_POLL_MS, Math.round(pollDelayMs * 2));
-            })
-            .finally(() => {
-                requestInFlight = false;
-                scheduleNextPoll();
-            });
+        responseStream.addEventListener('responses', event => {
+            const data = JSON.parse(event.data);
+            renderIncremental(data);
+        });
+
+        responseStream.onerror = () => {
+            if (responseStream) {
+                responseStream.close();
+                responseStream = null;
+            }
+            setTimeout(connectResponseStream, 3000);
+        };
     }
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            pollDelayMs = MIN_POLL_MS;
-            fetchLatestResponses();
+        if (!document.hidden && !responseStream) {
+            connectResponseStream();
         }
     });
 
-    fetchLatestResponses();
+    window.addEventListener('beforeunload', () => {
+        if (responseStream) {
+            responseStream.close();
+        }
+    });
+
+    connectResponseStream();
     setInterval(updateClock, 1000);
 </script>
 {% endblock %}
