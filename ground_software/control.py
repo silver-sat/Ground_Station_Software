@@ -22,7 +22,7 @@ from flask import (
 )
 import datetime
 import socket
-from ground_software.database import get_database
+from ground_software.database import get_database, next_sequence_value
 import secrets
 import hashlib
 import hmac
@@ -160,30 +160,7 @@ def next_command_sequence():
 
 
 def next_message_sequence():
-    database = get_database()
-    try:
-        database.execute("BEGIN IMMEDIATE")
-        row = database.execute(
-            "SELECT value FROM settings WHERE key = ?", ("message_sequence",)
-        ).fetchone()
-        if row and row["value"] is not None:
-            try:
-                current_sequence = int(row["value"])
-            except (TypeError, ValueError):
-                current_sequence = 1
-        else:
-            current_sequence = 1
-
-        database.execute(
-            "INSERT INTO settings (key, value) VALUES (?, ?) "
-            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-            ("message_sequence", str(current_sequence + 1)),
-        )
-        database.commit()
-        return current_sequence
-    except Exception:
-        database.rollback()
-        raise
+    return next_sequence_value(get_database(), "message_sequence", 1)
 
 
 def get_signing_secret():
