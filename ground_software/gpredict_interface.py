@@ -92,14 +92,18 @@ def gpredict_read(shutdown_event=None):
     gpredict_server.bind((gpredict_address, gpredict_port))
     gpredict_server.listen(0)
     gpredict_server.settimeout(1)
+    waiting_logged = False
     while not (shutdown_event and shutdown_event.is_set()):
-        logging.info(
-            f"Gpredict interface waiting for a connection on: {gpredict_address}:{gpredict_port}"
-        )
+        if not waiting_logged:
+            logging.info(
+                f"Gpredict interface waiting for a connection on: {gpredict_address}:{gpredict_port}"
+            )
+            waiting_logged = True
         try:
             socket, address = gpredict_server.accept()
-        except TimeoutError:
+        except (TimeoutError, socket.timeout):
             continue
+        waiting_logged = False
         logging.info(f"Connected: {address[0],address[1]}")
         socket.settimeout(1)
         receive_frequency = initial_frequency
@@ -111,7 +115,7 @@ def gpredict_read(shutdown_event=None):
                 data = socket.recv(1024)
                 if not data:
                     break
-            except TimeoutError:
+            except (TimeoutError, socket.timeout):
                 continue
             except Exception as e:
                 logging.error(f"Error receiving data: {e}")
