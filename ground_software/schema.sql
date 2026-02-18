@@ -15,6 +15,14 @@ CREATE TABLE responses(
     response NOT NULL
 );
 
+DROP TABLE IF EXISTS radio_logs;
+CREATE TABLE radio_logs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    message_sequence INTEGER NOT NULL UNIQUE,
+    log_line TEXT NOT NULL
+);
+
 DROP TABLE IF EXISTS settings;
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
@@ -58,4 +66,11 @@ SELECT
     CAST(SUBSTR(response, 3, LENGTH(response) - 3) AS TEXT) AS message
 FROM responses
 WHERE CAST(SUBSTR(response, 3, 5) AS TEXT) NOT IN ('ACK D', 'RES D')
+UNION ALL
+SELECT
+    message_sequence,
+    timestamp,
+    'radio_log' AS type,
+    log_line AS message
+FROM radio_logs
 ORDER BY message_sequence
