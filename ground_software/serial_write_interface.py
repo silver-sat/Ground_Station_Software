@@ -124,7 +124,9 @@ def serial_write(serial_port, shutdown_event=None):
                     connection, cursor, radio_serial, shutdown_event
                 )
             except socket.timeout:
-                continue
+                drain_pending_transmissions(
+                    connection, cursor, radio_serial, shutdown_event
+                )
             except Exception as exc:
                 logging.exception("Serial write loop error: %s", exc)
                 time.sleep(1)
