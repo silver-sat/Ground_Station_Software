@@ -65,6 +65,7 @@ Use `Ctrl+C` (or send `SIGTERM`) to stop all tasks with graceful shutdown.
 Open a browser and navigate to the address displayed in the Flask startup log, typically http://127.0.0.1:5000/. Ensure the SilverSat user interface is displayed. 
 
 You may now enter commands to the satellite by clicking a button or typing a command on the command line and pressing enter. Responses from the satellite will be displayed at the bottom of the window, most recent response first.
+The UI receives response updates through a persistent server-sent events stream (`/responses_stream`) rather than periodic browser polling.
 
 Start gpredict and open Radio Control. Target SilverSat and Track it. Then select your radio device and Engage. Radio Doppler data for the selected satellite will be transmitted to the ground radio via the gpredict interface module.
 

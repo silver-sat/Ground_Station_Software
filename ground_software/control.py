@@ -13,15 +13,20 @@ from flask import (
     flash,
     g,
     current_app,
+    Response,
     redirect,
     render_template,
     request,
     session,
+    stream_with_context,
     url_for,
     jsonify,
 )
 import datetime
+import json
+import sqlite3
 import socket
+import time
 from ground_software.database import get_database, next_sequence_value
 import secrets
 import hashlib
@@ -198,6 +203,29 @@ def clear_responses():
     database.commit()
 
 
+def get_cleared_sequence(database):
+    row = database.execute(
+        "SELECT value FROM settings WHERE key = ?", ("responses_cleared_sequence",)
+    ).fetchone()
+    if row and row["value"]:
+        try:
+            return int(row["value"])
+        except (TypeError, ValueError):
+            return 0
+    return 0
+
+
+def serialize_response_rows(rows):
+    return [
+        {
+            "message_sequence": row["message_sequence"],
+            "timestamp": row["timestamp"],
+            "response": row["response"].decode("utf-8", errors="replace"),
+        }
+        for row in rows
+    ]
+
+
 # User interface
 
 
@@ -296,9 +324,7 @@ def index():
 def latest_responses():
     # get cleared sequence if it exists
     database = get_database()
-    row = database.execute(
-        "SELECT value FROM settings WHERE key = ?", ("responses_cleared_sequence",)
-    ).fetchone()
+    cleared_sequence = get_cleared_sequence(database)
     after_sequence_raw = request.args.get("after_sequence")
     after_sequence = None
     if after_sequence_raw is not None:
@@ -306,13 +332,6 @@ def latest_responses():
             after_sequence = int(after_sequence_raw)
         except (TypeError, ValueError):
             after_sequence = None
-
-    cleared_sequence = 0
-    if row and row["value"]:
-        try:
-            cleared_sequence = int(row["value"])
-        except (TypeError, ValueError):
-            cleared_sequence = 0
 
     if after_sequence is not None:
         minimum_sequence = max(cleared_sequence, after_sequence)
@@ -329,16 +348,76 @@ def latest_responses():
             "ORDER BY message_sequence DESC LIMIT 25",
             (cleared_sequence,),
         ).fetchall()
-    return jsonify(
-        [
-            {
-                "message_sequence": row["message_sequence"],
-                "timestamp": row["timestamp"],
-                "response": row["response"].decode("utf-8", errors="replace"),
-            }
-            for row in responses
-        ]
-    )
+    return jsonify(serialize_response_rows(responses))
+
+
+@blueprint.route("/responses_stream")
+def responses_stream():
+    database_path = current_app.config["DATABASE"]
+
+    def send_event(event_name, payload):
+        return f"event: {event_name}\ndata: {json.dumps(payload)}\n\n"
+
+    @stream_with_context
+    def event_stream():
+        stream_database = sqlite3.connect(
+            database_path, detect_types=sqlite3.PARSE_DECLTYPES
+        )
+        stream_database.row_factory = sqlite3.Row
+        last_sequence = 0
+        last_cleared_sequence = None
+        last_keepalive = time.monotonic()
+        try:
+            while True:
+                cleared_sequence = get_cleared_sequence(stream_database)
+                if (
+                    last_cleared_sequence is None
+                    or cleared_sequence != last_cleared_sequence
+                ):
+                    snapshot_rows = stream_database.execute(
+                        "SELECT * FROM responses "
+                        "WHERE message_sequence > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+                        "ORDER BY message_sequence DESC LIMIT 25",
+                        (cleared_sequence,),
+                    ).fetchall()
+                    snapshot_payload = serialize_response_rows(snapshot_rows)
+                    if snapshot_payload:
+                        last_sequence = max(
+                            item["message_sequence"] for item in snapshot_payload
+                        )
+                    else:
+                        last_sequence = cleared_sequence
+
+                    last_cleared_sequence = cleared_sequence
+                    yield send_event("snapshot", snapshot_payload)
+                else:
+                    update_rows = stream_database.execute(
+                        "SELECT * FROM responses "
+                        "WHERE message_sequence > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+                        "ORDER BY message_sequence ASC LIMIT 100",
+                        (last_sequence,),
+                    ).fetchall()
+                    if update_rows:
+                        update_payload = serialize_response_rows(update_rows)
+                        last_sequence = max(
+                            item["message_sequence"] for item in update_payload
+                        )
+                        yield send_event("responses", update_payload)
+                        last_keepalive = time.monotonic()
+                    elif time.monotonic() - last_keepalive >= 15:
+                        yield ": keepalive\n\n"
+                        last_keepalive = time.monotonic()
+
+                time.sleep(1)
+        finally:
+            stream_database.close()
+
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    }
+    return Response(event_stream(), mimetype="text/event-stream", headers=headers)
 
 
 # Generate signed command
