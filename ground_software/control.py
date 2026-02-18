@@ -299,23 +299,40 @@ def latest_responses():
     row = database.execute(
         "SELECT value FROM settings WHERE key = ?", ("responses_cleared_sequence",)
     ).fetchone()
+    after_sequence_raw = request.args.get("after_sequence")
+    after_sequence = None
+    if after_sequence_raw is not None:
+        try:
+            after_sequence = int(after_sequence_raw)
+        except (TypeError, ValueError):
+            after_sequence = None
+
+    cleared_sequence = 0
     if row and row["value"]:
-        cleared_sequence = int(row["value"])
+        try:
+            cleared_sequence = int(row["value"])
+        except (TypeError, ValueError):
+            cleared_sequence = 0
+
+    if after_sequence is not None:
+        minimum_sequence = max(cleared_sequence, after_sequence)
+        responses = database.execute(
+            "SELECT * FROM responses "
+            "WHERE message_sequence > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
+            "ORDER BY message_sequence ASC LIMIT 100",
+            (minimum_sequence,),
+        ).fetchall()
+    else:
         responses = database.execute(
             "SELECT * FROM responses "
             "WHERE message_sequence > ? AND CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
             "ORDER BY message_sequence DESC LIMIT 25",
             (cleared_sequence,),
         ).fetchall()
-    else:
-        responses = database.execute(
-            "SELECT * FROM responses "
-            "WHERE CAST(substr(response, 3, 5) AS TEXT) NOT IN ('RES D','ACK D') "
-            "ORDER BY message_sequence DESC LIMIT 25"
-        ).fetchall()
     return jsonify(
         [
             {
+                "message_sequence": row["message_sequence"],
                 "timestamp": row["timestamp"],
                 "response": row["response"].decode("utf-8", errors="replace"),
             }

@@ -137,25 +137,104 @@
 </style>
 
 <script>
+    const MIN_POLL_MS = 1000;
+    const MAX_POLL_MS = 10000;
+    let pollDelayMs = MIN_POLL_MS;
+    let pollTimer = null;
+    let requestInFlight = false;
+    let maxMessageSequence = 0;
+
+    function scheduleNextPoll() {
+        if (pollTimer) {
+            clearTimeout(pollTimer);
+        }
+        pollTimer = setTimeout(fetchLatestResponses, pollDelayMs);
+    }
+
+    function setPollRate(hasNewData) {
+        if (hasNewData) {
+            pollDelayMs = MIN_POLL_MS;
+            return;
+        }
+        pollDelayMs = Math.min(MAX_POLL_MS, Math.round(pollDelayMs * 1.6));
+    }
+
+    function trimResponses() {
+        const responsesDiv = document.getElementById('responses');
+        while (responsesDiv.childElementCount > 25) {
+            responsesDiv.removeChild(responsesDiv.lastChild);
+        }
+    }
+
+    function buildResponseLine(item) {
+        const p = document.createElement('p');
+        p.textContent = item.timestamp + " - " + item.response.slice(2, -1);
+        p.dataset.messageSequence = String(item.message_sequence);
+        return p;
+    }
+
+    function renderFull(data) {
+        const responsesDiv = document.getElementById('responses');
+        responsesDiv.innerHTML = '';
+        data.forEach(item => {
+            responsesDiv.appendChild(buildResponseLine(item));
+            if (item.message_sequence > maxMessageSequence) {
+                maxMessageSequence = item.message_sequence;
+            }
+        });
+        trimResponses();
+    }
+
+    function renderIncremental(data) {
+        const responsesDiv = document.getElementById('responses');
+        data.forEach(item => {
+            responsesDiv.prepend(buildResponseLine(item));
+            if (item.message_sequence > maxMessageSequence) {
+                maxMessageSequence = item.message_sequence;
+            }
+        });
+        trimResponses();
+    }
+
     function fetchLatestResponses() {
-        fetch('/latest_responses')
+        if (requestInFlight) {
+            scheduleNextPoll();
+            return;
+        }
+
+        requestInFlight = true;
+        const isIncremental = maxMessageSequence > 0;
+        const url = isIncremental
+            ? `/latest_responses?after_sequence=${maxMessageSequence}`
+            : '/latest_responses';
+
+        fetch(url)
             .then(response => response.json())
             .then(data => {
-                const responsesDiv = document.getElementById('responses');
-                responsesDiv.innerHTML = '';
-                const filteredData = data.filter(item => {
-                    const trimResponse = item.response.slice(2, -1);
-                    return !trimResponse.startsWith("ACK D") && !trimResponse.startsWith("RES D");
-                });
-                filteredData.forEach(item => {
-                    const p = document.createElement('p');
-                    p.textContent = item.timestamp + " - " + item.response.slice(2, -1);
-                    responsesDiv.appendChild(p);
-                });
+                if (isIncremental) {
+                    renderIncremental(data);
+                } else {
+                    renderFull(data);
+                }
+                setPollRate(data.length > 0);
+            })
+            .catch(() => {
+                pollDelayMs = Math.min(MAX_POLL_MS, Math.round(pollDelayMs * 2));
+            })
+            .finally(() => {
+                requestInFlight = false;
+                scheduleNextPoll();
             });
-        updateClock();
     }
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            pollDelayMs = MIN_POLL_MS;
+            fetchLatestResponses();
+        }
+    });
+
     fetchLatestResponses();
-    setInterval(fetchLatestResponses, 1000); // Fetch responses every second
+    setInterval(updateClock, 1000);
 </script>
 {% endblock %}
