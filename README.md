@@ -56,7 +56,7 @@ Create a secret.txt file in the Ground_Station_Software directory that matches t
 
 From the Ground_Station_Software directory, execute
 
-```./ground_software/ground_station.py portname --log-port logportname```
+```python3 -m ground_software.ground_station portname --log-port logportname```
 
 where *portname* is the name of the serial port for the radio and *logportname* is the serial port that emits text radio log lines (optional, default `/tmp/radio_log`). This will start the gpredict interface module, the serial read task, the serial write task, the serial radio log task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
 
