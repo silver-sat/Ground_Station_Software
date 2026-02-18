@@ -14,6 +14,24 @@ Start the radio simulator:
 
 ```./tests/radio_simulator.py```
 
+Optional fault injection examples:
+
+```./tests/radio_simulator.py --fault-profile light```
+
+```./tests/radio_simulator.py --fault-profile none --force-remote-nack SetClock --force-local-res-err D --seed 42```
+
+Fault profile options:
+
+- `--fault-profile {none,light,moderate,aggressive}`
+- `--remote-nack-rate <0..1>` and `--remote-res-err-rate <0..1>`
+- `--local-nack-rate <0..1>` and `--local-res-err-rate <0..1>`
+- `--drop-response-rate <0..1>`
+- `--force-remote-nack <comma-separated command names>`
+- `--force-remote-res-err <comma-separated command names>`
+- `--force-local-nack <comma-separated local command codes>`
+- `--force-local-res-err <comma-separated local command codes>`
+- `--seed <int>` for repeatable randomized behavior
+
 Open a new terminal. Start the ground station software:
 
 ```./operate_satellite.sh```

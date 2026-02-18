@@ -1,7 +1,11 @@
 import os
 import sqlite3
 import tempfile
+import threading
+import time
 import unittest
+from unittest.mock import patch
+import socket as pysocket
 
 from ground_software import create_app
 from ground_software import control
@@ -41,6 +45,31 @@ class _FakeReadSerial:
         chunk = self.stream[self.position : end]
         self.position = end
         return chunk
+
+
+class _FakeRuntimeSerial:
+    def __init__(self, *args, **kwargs):
+        self.writes = []
+
+    def write(self, data):
+        self.writes.append(data)
+
+    def close(self):
+        pass
+
+
+class _TimeoutNotifySocket:
+    def settimeout(self, _seconds):
+        pass
+
+    def bind(self, _path):
+        pass
+
+    def recv(self, _size):
+        raise pysocket.timeout()
+
+    def close(self):
+        pass
 
 
 class QueueFlowTests(unittest.TestCase):
@@ -123,6 +152,66 @@ class QueueFlowTests(unittest.TestCase):
             self.assertEqual([row[1] for row in combined[3:]], ["response", "response"])
 
             write_connection.close()
+
+    def test_timeout_polling_drains_pending_doppler_without_notify(self):
+        db_dir = tempfile.mkdtemp(prefix="doppler_pending_")
+        db_path = os.path.join(db_dir, "radio.db")
+
+        app = create_app(
+            {
+                "TESTING": True,
+                "DATABASE": db_path,
+                "SECRET_KEY": "test",
+                "COMMAND_SECRET_PATH": self.secret_path,
+            }
+        )
+        with app.app_context():
+            init_database()
+            migrate_database()
+
+        shutdown_event = threading.Event()
+
+        def socket_factory(*_args, **_kwargs):
+            return _TimeoutNotifySocket()
+
+        with patch.object(serial_write_interface.serial, "Serial", _FakeRuntimeSerial), patch.object(
+            serial_write_interface.socket, "socket", side_effect=socket_factory
+        ), patch.object(serial_write_interface.os.path, "abspath", return_value=db_path), patch.object(
+            serial_write_interface, "NOTIFY_SOCKET_PATH", "/tmp/test_radio_notify_unused"
+        ):
+            writer_thread = threading.Thread(
+                target=serial_write_interface.serial_write,
+                args=("/tmp/fake_radio", shutdown_event),
+                daemon=True,
+            )
+            writer_thread.start()
+
+            # Ensure startup drain runs before inserting a new Doppler item.
+            time.sleep(0.05)
+
+            with sqlite3.connect(db_path) as connection:
+                connection.execute(
+                    "INSERT INTO transmissions (message_sequence, command, status) VALUES (?, ?, 'pending')",
+                    (1, b"\xC0\x0D433000000 433001000\xC0"),
+                )
+                connection.commit()
+
+            deadline = time.time() + 2.0
+            transmitted = False
+            while time.time() < deadline:
+                with sqlite3.connect(db_path) as connection:
+                    row = connection.execute(
+                        "SELECT status FROM transmissions WHERE message_sequence = 1"
+                    ).fetchone()
+                if row and row[0] == "transmitted":
+                    transmitted = True
+                    break
+                time.sleep(0.02)
+
+            shutdown_event.set()
+            writer_thread.join(timeout=1.0)
+
+            self.assertTrue(transmitted)
 
 
 if __name__ == "__main__":

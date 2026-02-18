@@ -27,6 +27,21 @@ test_doppler = False
 gpredict_address = "127.0.0.1"
 gpredict_port = 4532
 gpredict_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+NOTIFY_SOCKET_PATH = "/tmp/radio_notify"
+
+
+def notify_transmission():
+    try:
+        notify_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        notify_socket.connect(NOTIFY_SOCKET_PATH)
+        notify_socket.send(b"\x00")
+    except Exception:
+        pass
+    finally:
+        try:
+            notify_socket.close()
+        except Exception:
+            pass
 
 
 def database_write(transmit_frequency, receive_frequency):
@@ -48,6 +63,7 @@ def database_write(transmit_frequency, receive_frequency):
             ),
         )
         connection.commit()
+        notify_transmission()
     except sqlite3.Error as e:
         print(f"Database error: {e}")
     except Exception as e:
