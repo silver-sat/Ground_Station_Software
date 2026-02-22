@@ -40,6 +40,22 @@ Now initialize the database with the following command
 
 This will create the radio.db database in the instance folder, which is used to store commands and responses.
 
+### One-time import of a radio log file (testing/development)
+
+If you have a saved text radio log file and want to load it once into `radio_logs`:
+
+```python3 -m ground_software.import_radio_log /path/to/radio_log.txt```
+
+This importer uses today's date and the `HH:MM:SS` time embedded in each log line to populate the `timestamp` column, and it allocates `message_sequence` values from the current database sequence.
+
+Optional arguments:
+
+```python3 -m ground_software.import_radio_log /path/to/radio_log.txt --db ./instance/radio.db --log-date 2026-02-15```
+
+`--log-date` sets the calendar date used with each embedded `HH:MM:SS` log time.
+
+Lines that do not contain an `HH:MM:SS` time are skipped and reported.
+
 ## Installing the Radio Doppler Control
 
 Install the gpredict application on the laptop by following the instructions for your operating system. Homebrew is recommended for MacOS and apt is recommended for Ubuntu.

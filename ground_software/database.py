@@ -212,6 +212,17 @@ def _refresh_views(database):
         "SELECT message_sequence, timestamp, 'radio_log' AS type, log_line AS message "
         "FROM radio_logs "
         "ORDER BY message_sequence;"
+        "DROP VIEW IF EXISTS radio_log_rssi;"
+        "CREATE VIEW radio_log_rssi AS "
+        "SELECT id, timestamp, message_sequence, log_line, "
+        "CAST(TRIM(REPLACE(REPLACE(CASE "
+        "WHEN instr(lower(substr(log_line, instr(lower(log_line), 'n: rssi'))), 'dbm') > 0 THEN "
+        "substr(log_line, instr(lower(log_line), 'n: rssi') + 7, "
+        "instr(lower(substr(log_line, instr(lower(log_line), 'n: rssi') + 7)), 'dbm') - 1) "
+        "ELSE substr(log_line, instr(lower(log_line), 'n: rssi') + 7) END, '=', ''), ':', '')) AS REAL) "
+        "AS rssi_dbm "
+        "FROM radio_logs "
+        "WHERE instr(lower(log_line), 'n: rssi') > 0;"
     )
 
 
