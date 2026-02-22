@@ -112,6 +112,37 @@ class DatabaseMigrationTests(unittest.TestCase):
             self.assertEqual(first_sequences, second_sequences)
             self.assertEqual(first_next, second_next)
 
+    def test_radio_log_rssi_view_extracts_dbm_values(self):
+        self._build_legacy_database()
+
+        app = create_app({"TESTING": True, "DATABASE": self.db_path, "SECRET_KEY": "test"})
+        with app.app_context():
+            migrate_database()
+            database = get_database()
+            database.execute(
+                "INSERT INTO radio_logs (timestamp, message_sequence, log_line) VALUES (?, ?, ?)",
+                ("2026-02-15 12:34:56", 100, "N: rssi -97 dBm, snr 7"),
+            )
+            database.execute(
+                "INSERT INTO radio_logs (timestamp, message_sequence, log_line) VALUES (?, ?, ?)",
+                ("2026-02-15 12:35:56", 101, "N: rssi=-102 dBm"),
+            )
+            database.execute(
+                "INSERT INTO radio_logs (timestamp, message_sequence, log_line) VALUES (?, ?, ?)",
+                ("2026-02-15 12:36:56", 102, "unrelated line"),
+            )
+            database.commit()
+
+            rows = database.execute(
+                "SELECT message_sequence, rssi_dbm FROM radio_log_rssi ORDER BY message_sequence"
+            ).fetchall()
+
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0]["message_sequence"], 100)
+            self.assertEqual(rows[0]["rssi_dbm"], -97.0)
+            self.assertEqual(rows[1]["message_sequence"], 101)
+            self.assertEqual(rows[1]["rssi_dbm"], -102.0)
+
 
 if __name__ == "__main__":
     unittest.main()
