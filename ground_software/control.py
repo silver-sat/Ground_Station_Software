@@ -24,6 +24,7 @@ from flask import (
 )
 import datetime
 import json
+import re
 import sqlite3
 import socket
 import time
@@ -42,6 +43,226 @@ REMOTE_FRAME = b"\xAA"
 CALLSIGN = b"\x0E"
 NOTIFY_SOCKET_PATH = "/tmp/radio_notify"
 
+LOCAL_COMMAND_DEFINITIONS = [
+    {
+        "code": "07",
+        "label": "Beacon",
+        "params": [
+            {
+                "name": "beacon",
+                "label": "Beacon chars",
+                "kind": "ascii",
+                "length": 3,
+                "placeholder": "ABC",
+            }
+        ],
+    },
+    {
+        "code": "08",
+        "label": "Manual Antenna Release",
+        "params": [
+            {
+                "name": "select",
+                "label": "Select (A/B/C)",
+                "kind": "enum",
+                "allowed": ["A", "B", "C"],
+                "length": 1,
+                "placeholder": "A",
+            }
+        ],
+    },
+    {"code": "09", "label": "Status", "params": []},
+    {"code": "0A", "label": "Reset", "params": []},
+    {
+        "code": "0B",
+        "label": "Modify Freq",
+        "params": [
+            {
+                "name": "frequency",
+                "label": "Frequency (Hz)",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "433000000",
+            }
+        ],
+    },
+    {
+        "code": "0C",
+        "label": "Modify Mode",
+        "params": [
+            {
+                "name": "mode_index",
+                "label": "Mode Index",
+                "kind": "digits",
+                "length": 1,
+                "placeholder": "0",
+            }
+        ],
+    },
+    {
+        "code": "0D",
+        "label": "Doppler Frequencies",
+        "params": [
+            {
+                "name": "tx_frequency",
+                "label": "TX Frequency (Hz)",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "433000000",
+            },
+            {
+                "name": "rx_frequency",
+                "label": "RX Frequency (Hz)",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "433001000",
+            },
+        ],
+        "joiner": " ",
+    },
+    {"code": "0E", "label": "Transmit Callsign", "params": []},
+    {"code": "0F", "label": "Reset 5V", "params": []},
+    {
+        "code": "17",
+        "label": "Transmit CW (local)",
+        "params": [
+            {
+                "name": "duration_seconds",
+                "label": "Duration (ss)",
+                "kind": "digits",
+                "length": 2,
+                "placeholder": "05",
+            }
+        ],
+    },
+    {
+        "code": "18",
+        "label": "Background RSSI (averaged)",
+        "params": [
+            {
+                "name": "integration_seconds",
+                "label": "Integration (ss)",
+                "kind": "digits",
+                "length": 2,
+                "placeholder": "10",
+            }
+        ],
+    },
+    {"code": "19", "label": "Current RSSI (instantaneous)", "params": []},
+    {
+        "code": "1A",
+        "label": "Sweep Transmitter (local)",
+        "params": [
+            {
+                "name": "start_frequency",
+                "label": "Start Frequency",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "433000000",
+            },
+            {
+                "name": "stop_frequency",
+                "label": "Stop Frequency",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "434000000",
+            },
+            {
+                "name": "steps",
+                "label": "Steps",
+                "kind": "digits",
+                "length": 3,
+                "placeholder": "010",
+            },
+            {
+                "name": "dwell_ms",
+                "label": "Dwell (ms)",
+                "kind": "digits",
+                "length": 3,
+                "placeholder": "050",
+            },
+        ],
+        "joiner": " ",
+    },
+    {
+        "code": "1B",
+        "label": "Sweep Receiver (local)",
+        "params": [
+            {
+                "name": "start_frequency",
+                "label": "Start Frequency",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "433000000",
+            },
+            {
+                "name": "stop_frequency",
+                "label": "Stop Frequency",
+                "kind": "digits",
+                "length": 9,
+                "placeholder": "434000000",
+            },
+            {
+                "name": "steps",
+                "label": "Steps",
+                "kind": "digits",
+                "length": 3,
+                "placeholder": "010",
+            },
+            {
+                "name": "dwell_ms",
+                "label": "Dwell (ms)",
+                "kind": "digits",
+                "length": 3,
+                "placeholder": "050",
+            },
+        ],
+        "joiner": " ",
+    },
+    {
+        "code": "1C",
+        "label": "Query Radio Register (local)",
+        "params": [
+            {
+                "name": "register",
+                "label": "Register (ddd)",
+                "kind": "digits",
+                "length": 3,
+                "placeholder": "255",
+            }
+        ],
+    },
+    {
+        "code": "1D",
+        "label": "Adjust Output Power (local)",
+        "params": [
+            {
+                "name": "power",
+                "label": "Power (0-9/A)",
+                "kind": "hex",
+                "length": 1,
+                "placeholder": "A",
+            }
+        ],
+    },
+    {"code": "1E", "label": "Print Stats", "params": []},
+    {
+        "code": "1F",
+        "label": "Modify CCA Threshold",
+        "params": [
+            {
+                "name": "threshold",
+                "label": "Threshold",
+                "kind": "threshold",
+                "placeholder": "5 or 128",
+            }
+        ],
+    },
+]
+LOCAL_COMMAND_LOOKUP = {
+    item["code"]: item for item in LOCAL_COMMAND_DEFINITIONS
+}
+
 # Cached signing secret
 
 _SIGNING_SECRET = None
@@ -53,6 +274,17 @@ def insert(command):
     database = get_database()
     print(f"Command: {command}")
     command = FEND + REMOTE_FRAME + command + FEND
+    message_sequence = next_message_sequence()
+    database.execute(
+        "INSERT INTO transmissions (message_sequence, command) VALUES (?, ?)",
+        (message_sequence, command),
+    )
+    database.commit()
+    notify_transmission()
+
+
+def insert_local_frame(command):
+    database = get_database()
     message_sequence = next_message_sequence()
     database.execute(
         "INSERT INTO transmissions (message_sequence, command) VALUES (?, ?)",
@@ -82,15 +314,106 @@ def now1m():
 
 
 def callsign():
-    database = get_database()
-    command = FEND + CALLSIGN + FEND
-    message_sequence = next_message_sequence()
-    database.execute(
-        "INSERT INTO transmissions (message_sequence, command) VALUES (?, ?)",
-        (message_sequence, command),
-    )
-    database.commit()
-    notify_transmission()
+    insert_local_frame(build_local_command_frame("0E", {}))
+
+
+def normalize_local_code(local_code):
+    if local_code is None:
+        raise ValueError("Local command code is required")
+
+    normalized = str(local_code).strip().upper()
+    if normalized.startswith("0X"):
+        normalized = normalized[2:]
+    if len(normalized) == 1:
+        normalized = f"0{normalized}"
+    if normalized not in LOCAL_COMMAND_LOOKUP:
+        raise ValueError(f"Unsupported local command code: {local_code}")
+    return normalized
+
+
+def normalize_command_byte(local_code):
+    if local_code is None:
+        raise ValueError("Command code is required")
+
+    normalized = str(local_code).strip().upper()
+    if normalized.startswith("0X"):
+        normalized = normalized[2:]
+    if len(normalized) == 1:
+        normalized = f"0{normalized}"
+    if not re.fullmatch(r"[0-9A-F]{2}", normalized):
+        raise ValueError("Command code must be 1 or 2 hex digits")
+    return normalized
+
+
+def _normalize_param(raw_value, spec):
+    value = "" if raw_value is None else str(raw_value).strip()
+    kind = spec["kind"]
+    length = spec.get("length")
+
+    if kind == "enum":
+        normalized = value.upper()
+        if normalized not in spec["allowed"]:
+            allowed = ", ".join(spec["allowed"])
+            raise ValueError(f"{spec['label']} must be one of: {allowed}")
+        return normalized
+
+    if kind == "digits":
+        if not value.isdigit():
+            raise ValueError(f"{spec['label']} must contain only digits")
+        if length is not None and len(value) != length:
+            raise ValueError(f"{spec['label']} must be exactly {length} characters")
+        return value
+
+    if kind == "hex":
+        normalized = value.upper()
+        if not re.fullmatch(r"[0-9A-F]+", normalized):
+            raise ValueError(f"{spec['label']} must be hex characters")
+        if length is not None and len(normalized) != length:
+            raise ValueError(f"{spec['label']} must be exactly {length} characters")
+        return normalized
+
+    if kind == "ascii":
+        if length is not None and len(value) != length:
+            raise ValueError(f"{spec['label']} must be exactly {length} characters")
+        return value
+
+    if kind == "threshold":
+        if value.isdigit() and len(value) in (1, 3):
+            return value
+        normalized = value.upper()
+        if len(normalized) == 1 and re.fullmatch(r"[0-9A-F]", normalized):
+            return normalized
+        raise ValueError(
+            f"{spec['label']} must be 1 hex char or 1/3 decimal digits"
+        )
+
+    raise ValueError(f"Unsupported parameter type: {kind}")
+
+
+def build_local_command_frame(local_code, raw_params):
+    normalized_code = normalize_local_code(local_code)
+    command_definition = LOCAL_COMMAND_LOOKUP[normalized_code]
+    parameters = command_definition.get("params", [])
+
+    payload_parts = []
+    for spec in parameters:
+        value = raw_params.get(spec["name"])
+        payload_parts.append(_normalize_param(value, spec))
+
+    joiner = command_definition.get("joiner", "")
+    payload = joiner.join(payload_parts).encode("utf-8")
+    return FEND + bytes.fromhex(normalized_code) + payload + FEND
+
+
+def build_raw_local_command_frame(local_code, raw_payload):
+    normalized_code = normalize_command_byte(local_code)
+    payload_text = "" if raw_payload is None else str(raw_payload)
+    payload = payload_text.encode("utf-8")
+    return FEND + bytes.fromhex(normalized_code) + payload + FEND
+
+
+def command_definitions_for_template():
+    return LOCAL_COMMAND_DEFINITIONS
 
 
 def notify_transmission():
@@ -317,6 +640,90 @@ def index():
 
     return render_template(
         "control.html", responses=[], command_sequence=get_current_command_sequence()
+    )
+
+
+@blueprint.route("/radio", methods=["GET", "POST"])
+def radio():
+    selected_code = "0E"
+    raw_command_code = "0E"
+    raw_payload = ""
+
+    if request.method == "POST":
+        button = request.form.get("clicked_button")
+
+        if button == "CallSign":
+            callsign()
+            selected_code = "0E"
+        elif button == "SendLocal":
+            selected_code = request.form.get("command_code", "0E")
+            normalized_code = normalize_local_code(selected_code)
+            command_definition = LOCAL_COMMAND_LOOKUP[normalized_code]
+            params = {
+                item["name"]: request.form.get(item["name"])
+                for item in command_definition.get("params", [])
+            }
+            try:
+                local_frame = build_local_command_frame(normalized_code, params)
+                insert_local_frame(local_frame)
+            except ValueError as error:
+                flash(str(error))
+        elif button == "SendRawLocal":
+            selected_code = request.form.get("command_code", "0E")
+            raw_command_code = request.form.get("raw_command_code", "0E")
+            raw_payload = request.form.get("raw_payload", "")
+            try:
+                local_frame = build_raw_local_command_frame(raw_command_code, raw_payload)
+                insert_local_frame(local_frame)
+            except ValueError as error:
+                flash(str(error))
+
+    return render_template(
+        "radio.html",
+        responses=[],
+        command_definitions=command_definitions_for_template(),
+        selected_code=selected_code,
+        raw_command_code=raw_command_code,
+        raw_payload=raw_payload,
+        rssi_window_minutes=15,
+    )
+
+
+@blueprint.route("/radio/rssi")
+def radio_rssi():
+    raw_minutes = request.args.get("minutes", "15")
+    try:
+        minutes = int(raw_minutes)
+    except (TypeError, ValueError):
+        minutes = 15
+    minutes = max(1, min(minutes, 240))
+
+    database = get_database()
+    latest_row = database.execute(
+        "SELECT MAX(timestamp) AS latest_timestamp FROM radio_log_rssi"
+    ).fetchone()
+    latest_timestamp = latest_row["latest_timestamp"] if latest_row else None
+
+    if latest_timestamp is None:
+        return jsonify([])
+
+    rows = database.execute(
+        "SELECT timestamp, message_sequence, rssi_dbm "
+        "FROM radio_log_rssi "
+        "WHERE timestamp >= datetime(?, ?) "
+        "ORDER BY timestamp ASC, message_sequence ASC",
+        (latest_timestamp, f"-{minutes} minutes"),
+    ).fetchall()
+
+    return jsonify(
+        [
+            {
+                "timestamp": str(row["timestamp"]),
+                "message_sequence": row["message_sequence"],
+                "rssi_dbm": row["rssi_dbm"],
+            }
+            for row in rows
+        ]
     )
 
 

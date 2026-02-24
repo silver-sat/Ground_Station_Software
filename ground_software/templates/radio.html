@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<div class="header-container">
+    <img src="{{ url_for('static', filename='silversat_logo.png') }}" class="header-logo" />
+    <h1>{% block title %}Radio Commands{% endblock %}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    <div class="page-links">
+        <a href="{{ url_for('control.index') }}">Operating Interface</a>
+        <a href="{{ url_for('control.radio') }}">Radio Commands</a>
+    </div>
+
+    <div id="clock"></div>
+
+    <div class="main-flex-container radio-main-layout">
+        <div class="left-panel">
+            <h2>Local Command Builder</h2>
+            <div class="field-group">
+                <label for="command_code">Command</label>
+                <select id="command_code" name="command_code">
+                    {% for item in command_definitions %}
+                    <option value="{{ item.code }}" {% if item.code == selected_code %}selected{% endif %}>0x{{ item.code }} - {{ item.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="param_fields"></div>
+
+            <div class="button-row">
+                <button type="submit" name="clicked_button" value="SendLocal">Send Local Command</button>
+                <button type="submit" name="clicked_button" value="CallSign">Transmit call sign</button>
+            </div>
+            <p id="builder_preview" class="compact-info">Frame preview: waiting for command input.</p>
+
+            <details>
+                <summary>Advanced: Raw local packet body</summary>
+                <div class="field-group">
+                    <label for="raw_command_code">Command Byte (hex)</label>
+                    <input
+                        type="text"
+                        id="raw_command_code"
+                        name="raw_command_code"
+                        placeholder="0E"
+                        value="{{ raw_command_code }}"
+                        autocomplete="off"
+                    >
+                </div>
+                <div class="field-group">
+                    <label for="raw_payload">Raw Payload (UTF-8 text, no FEND)</label>
+                    <input
+                        type="text"
+                        id="raw_payload"
+                        name="raw_payload"
+                        placeholder="Optional payload"
+                        value="{{ raw_payload }}"
+                        autocomplete="off"
+                    >
+                </div>
+                <div class="button-row">
+                    <button type="submit" name="clicked_button" value="SendRawLocal">Send Raw Local Command</button>
+                </div>
+                <p id="raw_preview" class="compact-info">Raw frame preview: waiting for input.</p>
+            </details>
+
+            <h2>RSSI (last {{ rssi_window_minutes }} minutes of available data)</h2>
+            <div class="chart-panel">
+                <svg id="rssi_chart" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+                <div id="rssi_summary" class="chart-summary">Waiting for RSSI data...</div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <h2>Command Responses</h2>
+            <div class="responses" id="responses">
+                {% for response in responses %}
+                <p>{{ response['timestamp'] + " - " + response['response'][2:-1].decode('utf-8', errors='replace') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</form>
+
+<script id="command-definitions-data" type="application/json">{{ command_definitions | tojson }}</script>
+<input id="rssi-window-minutes" type="hidden" value="{{ rssi_window_minutes }}">
+
+<script>
+    const commandDefinitions = JSON.parse(
+        document.getElementById('command-definitions-data').textContent
+    );
+    const rssiWindowMinutes = Number(
+        document.getElementById('rssi-window-minutes').value
+    );
+    let responseStream = null;
+
+    function updateClock() {
+        const now = new Date();
+        const gmtOptions = {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            timeZone: "Etc/UTC",
+            hour12: false,
+        };
+        const etOptions = {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            timeZone: "America/New_York",
+            hour12: false,
+        };
+        document.getElementById('clock').innerHTML =
+            "GMT: " + now.toLocaleString('en-US', gmtOptions) + "<br> ET: " + now.toLocaleString('en-US', etOptions);
+    }
+
+    function trimResponses() {
+        const responsesDiv = document.getElementById('responses');
+        while (responsesDiv.childElementCount > 25) {
+            responsesDiv.removeChild(responsesDiv.lastChild);
+        }
+    }
+
+    function buildResponseLine(item) {
+        const p = document.createElement('p');
+        p.textContent = item.timestamp + " - " + item.response.slice(2, -1);
+        p.dataset.messageSequence = String(item.message_sequence);
+        return p;
+    }
+
+    function renderFullResponses(data) {
+        const responsesDiv = document.getElementById('responses');
+        responsesDiv.innerHTML = '';
+        data.forEach(item => responsesDiv.appendChild(buildResponseLine(item)));
+        trimResponses();
+    }
+
+    function renderIncrementalResponses(data) {
+        const responsesDiv = document.getElementById('responses');
+        data.forEach(item => responsesDiv.prepend(buildResponseLine(item)));
+        trimResponses();
+    }
+
+    function connectResponseStream() {
+        if (responseStream) {
+            responseStream.close();
+        }
+        responseStream = new EventSource('/responses_stream');
+
+        responseStream.addEventListener('snapshot', event => {
+            renderFullResponses(JSON.parse(event.data));
+        });
+
+        responseStream.addEventListener('responses', event => {
+            renderIncrementalResponses(JSON.parse(event.data));
+        });
+
+        responseStream.onerror = () => {
+            if (responseStream) {
+                responseStream.close();
+                responseStream = null;
+            }
+            setTimeout(connectResponseStream, 3000);
+        };
+    }
+
+    function getCommandDefinition(code) {
+        return commandDefinitions.find(item => item.code === code);
+    }
+
+    function rebuildParameterFields() {
+        const select = document.getElementById('command_code');
+        const container = document.getElementById('param_fields');
+        const definition = getCommandDefinition(select.value);
+
+        container.innerHTML = '';
+
+        if (!definition || !definition.params || definition.params.length === 0) {
+            container.innerHTML = '<p class="compact-info">This command has no parameters.</p>';
+            updateBuilderPreview();
+            return;
+        }
+
+        definition.params.forEach(spec => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'field-group';
+
+            const label = document.createElement('label');
+            label.setAttribute('for', spec.name);
+            label.textContent = spec.label;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = spec.name;
+            input.name = spec.name;
+            input.autocomplete = 'off';
+            if (spec.placeholder) {
+                input.placeholder = spec.placeholder;
+            }
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(input);
+            container.appendChild(wrapper);
+        });
+
+        updateBuilderPreview();
+    }
+
+    function toHex(byteValue) {
+        return byteValue.toString(16).toUpperCase().padStart(2, '0');
+    }
+
+    function frameToHex(frameBytes) {
+        return frameBytes.map(toHex).join(' ');
+    }
+
+    function parseCodeByte(value) {
+        const cleaned = String(value || '').trim().toUpperCase().replace(/^0X/, '');
+        if (!/^[0-9A-F]{1,2}$/.test(cleaned)) {
+            return null;
+        }
+        return parseInt(cleaned, 16);
+    }
+
+    function updateBuilderPreview() {
+        const preview = document.getElementById('builder_preview');
+        const select = document.getElementById('command_code');
+        const definition = getCommandDefinition(select.value);
+        if (!definition) {
+            preview.textContent = 'Frame preview: unknown command.';
+            return;
+        }
+
+        const codeByte = parseInt(definition.code, 16);
+        const parts = [];
+        let missing = false;
+
+        (definition.params || []).forEach(spec => {
+            const input = document.getElementById(spec.name);
+            const value = input ? input.value : '';
+            if (value.length === 0) {
+                missing = true;
+            }
+            parts.push(value);
+        });
+
+        const joiner = definition.joiner || '';
+        const payloadText = parts.join(joiner);
+        const payloadBytes = Array.from(new TextEncoder().encode(payloadText));
+        const frame = [0xC0, codeByte, ...payloadBytes, 0xC0];
+
+        preview.textContent = `Frame preview: ${frameToHex(frame)}${missing ? ' (incomplete parameters)' : ''}`;
+    }
+
+    function updateRawPreview() {
+        const preview = document.getElementById('raw_preview');
+        const codeInput = document.getElementById('raw_command_code');
+        const payloadInput = document.getElementById('raw_payload');
+        const codeByte = parseCodeByte(codeInput.value);
+
+        if (codeByte === null) {
+            preview.textContent = 'Raw frame preview: command byte must be 1-2 hex digits.';
+            return;
+        }
+
+        const payloadBytes = Array.from(new TextEncoder().encode(payloadInput.value || ''));
+        const frame = [0xC0, codeByte, ...payloadBytes, 0xC0];
+        preview.textContent = `Raw frame preview: ${frameToHex(frame)}`;
+    }
+
+    function renderRssiChart(points) {
+        const svg = document.getElementById('rssi_chart');
+        const summary = document.getElementById('rssi_summary');
+
+        if (!points || points.length === 0) {
+            svg.innerHTML = '';
+            summary.textContent = 'No RSSI data in the current time window.';
+            return;
+        }
+
+        const width = 760;
+        const height = 260;
+        const margin = { top: 20, right: 24, bottom: 28, left: 48 };
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
+
+        const parsed = points
+            .map(item => ({
+                t: new Date(item.timestamp.replace(' ', 'T') + 'Z').getTime(),
+                y: Number(item.rssi_dbm),
+            }))
+            .filter(item => Number.isFinite(item.t) && Number.isFinite(item.y));
+
+        if (parsed.length === 0) {
+            svg.innerHTML = '';
+            summary.textContent = 'RSSI samples were returned but could not be parsed.';
+            return;
+        }
+
+        const minTime = Math.min(...parsed.map(item => item.t));
+        const maxTime = Math.max(...parsed.map(item => item.t));
+        const minRssi = Math.min(...parsed.map(item => item.y));
+        const maxRssi = Math.max(...parsed.map(item => item.y));
+
+        const timeSpan = Math.max(maxTime - minTime, 1);
+        const rssiSpan = Math.max(maxRssi - minRssi, 1);
+
+        const polylinePoints = parsed
+            .map(item => {
+                const x = margin.left + ((item.t - minTime) / timeSpan) * chartWidth;
+                const y = margin.top + (1 - (item.y - minRssi) / rssiSpan) * chartHeight;
+                return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(' ');
+
+        const xAxisY = margin.top + chartHeight;
+        const yAxisX = margin.left;
+
+        svg.innerHTML = `
+            <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
+            <line x1="${yAxisX}" y1="${margin.top}" x2="${yAxisX}" y2="${xAxisY}" class="chart-axis"></line>
+            <line x1="${yAxisX}" y1="${xAxisY}" x2="${margin.left + chartWidth}" y2="${xAxisY}" class="chart-axis"></line>
+            <polyline points="${polylinePoints}" class="chart-line"></polyline>
+            <text x="${margin.left}" y="${margin.top - 6}" class="chart-label">${maxRssi.toFixed(1)} dBm</text>
+            <text x="${margin.left}" y="${height - 6}" class="chart-label">${minRssi.toFixed(1)} dBm</text>
+        `;
+
+        const latest = parsed[parsed.length - 1].y;
+        summary.textContent = `Samples: ${parsed.length} • Latest: ${latest.toFixed(1)} dBm • Range: ${minRssi.toFixed(1)} to ${maxRssi.toFixed(1)} dBm`;
+    }
+
+    async function refreshRssi() {
+        try {
+            const response = await fetch(`/radio/rssi?minutes=${encodeURIComponent(rssiWindowMinutes)}`);
+            if (!response.ok) {
+                throw new Error('Unable to fetch RSSI data');
+            }
+            const points = await response.json();
+            renderRssiChart(points);
+        } catch (_error) {
+            document.getElementById('rssi_summary').textContent = 'RSSI endpoint unavailable.';
+        }
+    }
+
+    document.getElementById('command_code').addEventListener('change', rebuildParameterFields);
+    document.getElementById('param_fields').addEventListener('input', updateBuilderPreview);
+    document.getElementById('raw_command_code').addEventListener('input', updateRawPreview);
+    document.getElementById('raw_payload').addEventListener('input', updateRawPreview);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !responseStream) {
+            connectResponseStream();
+        }
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (responseStream) {
+            responseStream.close();
+        }
+    });
+
+    updateClock();
+    rebuildParameterFields();
+    updateRawPreview();
+    connectResponseStream();
+    refreshRssi();
+    setInterval(updateClock, 1000);
+    setInterval(refreshRssi, 5000);
+</script>
+{% endblock %}

@@ -9,6 +9,10 @@
 
 {% block content %}
 <form method="POST">
+    <div class="page-links">
+        <a href="{{ url_for('control.index') }}">Operating Interface</a>
+        <a href="{{ url_for('control.radio') }}">Radio Commands</a>
+    </div>
     <div id="clock"></div>
     <script>
         function updateClock() {
