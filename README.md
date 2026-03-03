@@ -1,14 +1,14 @@
 # Ground Control Software
 
-The ground control software presents a user interface for issuing commands to the satellite and receiving responses. It also forwards gpredict radio Doppler data to adjust the receive and transmit frequencies for the ground radio.
+The ground control software presents a user interface for issuing commands to the satellite and receiving responses. It also forwards gpredict radio Doppler data to adjust the receive and transmit frequencies for the ground radio. It provides an interface to issue local commands to the ground radio and view rssi information from the radio debug log. 
 
-The ground control software is a web application developed in Flask to send commands and display responses and Python modules to read from gpredict, write to the radio, and read from the radio. Commands and responses are queued and stored in a sqlite3 database.
+The ground control software is a web application developed in Flask to send commands and display information and Python modules to read from gpredict, write to the radio, and read from the radio. Commands, responses, and the radio log are queued and stored in a sqlite3 database.
 
 ## Installing the User and Radio Interface
 
 These instructions assume a Linux or MacOS environment. Different steps would be required for Windows environments.
 
-Clone the Ground_Station_Software repository from github to a local directory on the laptop. If the repository is already present, ensure it is up to date using git pull from the command line or the equivalent.
+Clone the Ground_Station_Software repository from github to a local directory on the ground station system. If the repository is already present, ensure it is up to date using git pull from the command line or the equivalent.
 
 Open a command shell and navigate to the Ground_Station_Software directory. Create a python virtual environment with the following command:
 
@@ -38,11 +38,11 @@ Now initialize the database with the following command
 
 ```flask --app ground_software init-database```
 
-This will create the radio.db database in the instance folder, which is used to store commands and responses.
+This will create the radio.db database in the instance folder, which is used to store commands, responses, and log entries.
 
 ### One-time import of a radio log file (testing/development)
 
-If you have a saved text radio log file and want to load it once into `radio_logs`:
+If you have a saved text radio log file and want to load it once into the `radio_logs` table:
 
 ```python3 -m ground_software.import_radio_log /path/to/radio_log.txt```
 
@@ -62,13 +62,13 @@ Install the gpredict application on the laptop by following the instructions for
 
 The gpredict_interface.py module provides the functions of Hamlib rigctld daemon. You do not need rigctld to control the SilverSat radio.
 
-Launch gpredict, configure your location as the default and add a radio. The radio should be Duplex TRX with PTT status None. Update the satellite tracking information (the TLE data). Ensure you have data for SilverSat available in the gpredict application.
+Launch gpredict, configure your location as the default and add a radio. The radio should be Duplex TRX with PTT status None. Update the satellite tracking information (the TLE data). Ensure you have data for SilverSat available in the gpredict application, including a transponder file.
 
 ## Verifying the Shared Secret
 
 Create a secret.txt file in the Ground_Station_Software directory that matches the arduino_secrets.h file used to compile the Avionics software. Ensure that this file is included in .gitignore to prevent it from being uploaded to github.
 
-## Starting the Ground Station
+## Testing the Ground Station
 
 From the Ground_Station_Software directory, execute
 
@@ -76,26 +76,30 @@ From the Ground_Station_Software directory, execute
 
 where *portname* is the name of the serial port for the radio and *logportname* is the serial port that emits text radio log lines (optional, default `/tmp/radio_log`). This will start the gpredict interface module, the serial read task, the serial write task, the serial radio log task, and the user interface. The gpredict interface will listen on the default TCP/IP port used by gpredict for radio frequency information.
 
-Use `Ctrl+C` (or send `SIGTERM`) to stop all tasks with graceful shutdown.
-
 Open a browser and navigate to the address displayed in the Flask startup log, typically http://127.0.0.1:5000/. Ensure the SilverSat user interface is displayed. 
 
-You may now enter commands to the satellite by clicking a button or typing a command on the command line and pressing enter. Responses from the satellite will be displayed at the bottom of the window, most recent response first.
+You may now enter commands to the satellite by clicking a button or typing a command on the command line and pressing enter. Responses from the satellite will be displayed at the bottom right of the window, most recent response first.
 The UI receives response updates through a persistent server-sent events stream (`/responses_stream`) rather than periodic browser polling.
 
 Start gpredict and open Radio Control. Target SilverSat and Track it. Then select your radio device and Engage. Radio Doppler data for the selected satellite will be transmitted to the ground radio via the gpredict interface module.
 
+Check the logs and terminal windows for error messages.
+
+Use `Ctrl+C` (or send `SIGTERM`) to stop all tasks with graceful shutdown.
+
+You have now verified the ground station software installation.
+
 ## Operating the satellite
 
-With the setup steps above completed, you can operate the satellite with these steps.
+With the one-time setup steps above completed, you can operate the satellite with these steps.
 
 1. In a terminal, navigate to the Ground_Station_Software directory and run ```./operate_satellite.sh portname logportname``` where *portname* is the name of the radio serial port and *logportname* is the optional serial port for radio text logs.
 
-5. Track and engage the satellite using the gpredict interface.
+2. Track and engage the satellite using the gpredict interface.
 
-6. Start a browser and navigate to http://127.0.0.1:5000.
+3. Start a browser and navigate to http://127.0.0.1:5000.
 
-You may now interact with the satellite using the browser interface and monitor its location using the gpredict interface.
+You may now interact with the satellite and ground radio using the browser interface and monitor the satellite's  location using the gpredict interface.
 
 ## Security considerations
 
