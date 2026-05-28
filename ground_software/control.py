@@ -309,6 +309,10 @@ def now1m():
         datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=60)
     ).strftime("%Y %m %d %H %M %S")
 
+def now10s():
+    return (
+        datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=10)
+    ).strftime("%Y %m %d %H %M %S")
 
 # Insert callsign command in database
 
@@ -631,6 +635,16 @@ def index():
                         insert(sign(f"SSDVTimes {now1m()}"))
                     except RuntimeError as error:
                         flash(str(error))
+                case "SDT0166":
+                    try:
+                        insert(sign(f"SSDVTimes {now10s()}))
+                        except RuntimeError as of error:
+                        flast(str(error))
+                case "SPT0166":
+                    try:
+                        insert(sign(f"PicTimes {now10s()}))
+                        except RuntimeError as of error:
+                        flast(str(error))
                 case "ClearResponses":
                     clear_responses()
                 case _:
