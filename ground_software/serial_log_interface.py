@@ -10,6 +10,7 @@ import serial
 import time
 
 from ground_software.database import next_sequence_value
+from ground_software import cloud_logger
 
 BAUD_RATE = 19200
 retry_delay = 5  # seconds
@@ -56,6 +57,10 @@ def serial_log_read(serial_port, shutdown_event=None):
                 (message_sequence, log_line),
             )
             connection.commit()
+            cloud_logger.post_event(
+                "ground_radio",
+                {"log_line": log_line, "message_sequence": message_sequence},
+            )
     finally:
         try:
             log_serial.close()
