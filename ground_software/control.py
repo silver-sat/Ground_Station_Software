@@ -598,7 +598,7 @@ def index():
                         insert(sign("PayComms"))
                     except RuntimeError as error:
                         flash(str(error))
-                case "SPT1":
+                case "SPT1M":
                     try:
                         insert(sign(f"PicTimes {now1m()}"))
                     except RuntimeError as error:
@@ -608,12 +608,12 @@ def index():
                         insert(sign("BeaconSp 0"))
                     except RuntimeError as error:
                         flash(str(error))
-                case "SBI1":
+                case "SBI1M":
                     try:
                         insert(sign("BeaconSp 60"))
                     except RuntimeError as error:
                         flash(str(error))
-                case "SBI3":
+                case "SBI3M":
                     try:
                         insert(sign("BeaconSp 180"))
                     except RuntimeError as error:
@@ -630,21 +630,21 @@ def index():
                         flash(str(error))
                 case "CallSign":
                     callsign()
-                case "SDT1":
+                case "SDT1M":
                     try:
                         insert(sign(f"SSDVTimes {now1m()}"))
                     except RuntimeError as error:
                         flash(str(error))
-                case "SDT0166":
+                case "SDT10S":
                     try:
-                        insert(sign(f"SSDVTimes {now10s()}))
-                        except RuntimeError as of error:
-                        flast(str(error))
-                case "SPT0166":
+                        insert(sign(f"SSDVTimes {now10s()}"))
+                    except RuntimeError as error:
+                        flash(str(error))
+                case "SPT10S":
                     try:
-                        insert(sign(f"PicTimes {now10s()}))
-                        except RuntimeError as of error:
-                        flast(str(error))
+                        insert(sign(f"PicTimes {now10s()}"))
+                    except RuntimeError as error:
+                        flash(str(error))
                 case "ClearResponses":
                     clear_responses()
                 case _:
